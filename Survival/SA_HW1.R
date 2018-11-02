@@ -4,13 +4,13 @@
 ###########################
 rm(list=ls())
 
-library(dplyr)
+library(tidyverse)
 library(survival)
+#install.packages("survminer")
+library(survminer)
 
 #katrina = read.csv(file='C:\\Users\\jlmic\\Documents\\Survival Analysis\\Data\\katrina.csv')
 katrina = read.csv(file='C:\\Users\\Steven\\Documents\\MSA\\Analytics Foundations\\Survival\\data\\katrina.csv')
-
-View(katrina)
 dim(katrina) # 770 x 60
 
 ####### SUMMARY STATS ######
@@ -47,17 +47,23 @@ katrina$reason <- as.factor(katrina$reason) #important for merge below
 summary(katrina$fail)
 sum(katrina$fail == 1) # 454/770 failed, math adds up
 
-failure_codes <- as.data.frame(cbind(reason=c(0, 1, 2, 3, 4), reason_w=c(NA,"flood","motor","surge","jammed")))
+failure_codes <- as.data.frame(cbind(reason=c(0, 1, 2, 3, 4), reason_w=c("no failure","flood","motor","surge","jammed")))
 
 katrina <- left_join(katrina, failure_codes, by='reason')
 
 unique(katrina$reason_w)
 
+
 # Plot survival curve Jacob's code
 katrina_fit = survfit(Surv(katrina$hour, katrina$fail == 1) ~ 1, data=katrina)
 katrina_fit
 summary(katrina_fit)
-plot(katrina_fit) #TODO ggplot this
+# plot(katrina_fit)
+ggsurvplot(katrina_fit, data = katrina, conf.int = FALSE, legend="none",
+           title="Pump Survival Curve",
+           xlab="Time (hours)",
+           ggtheme = theme_bw())
+
 
 # Stratify
 katrina.nofail = filter(katrina, reason == 0)
@@ -78,3 +84,15 @@ plot(flood_fit)
 plot(motor_fit)
 plot(surge_fit)
 plot(jam_fit)
+
+plot(katrina_fit$surv, type="l")
+
+katrina_grp_fit = survfit(Surv(katrina$hour, katrina$fail == 1) ~ reason_w, data=katrina)
+summary(katrina_grp_fit)
+
+ggsurvplot(katrina_grp_fit, conf.int = FALSE, 
+           legend="right", title="Pump Survival Curves",
+           legend.labs=c("flood","jammed","motor","no_failure","surge"),
+           legend.title="Reason for Failure",
+           xlab="Time (hours)",
+           ggtheme = theme_bw())

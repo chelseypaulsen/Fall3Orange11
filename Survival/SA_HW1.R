@@ -6,7 +6,9 @@
 library(dplyr)
 library(survival)
 
-katrina = read.csv(file='C:\\Users\\jlmic\\Documents\\Survival Analysis\\Data\\katrina.csv')
+#katrina = read.csv(file='C:\\Users\\jlmic\\Documents\\Survival Analysis\\Data\\katrina.csv')
+katrina = read.csv(file='C:\\Users\\Steven\\Documents\\MSA\\Analytics Foundations\\Survival\\data\\katrina.csv')
+
 View(katrina)
 dim(katrina) # 770 x 60
 
@@ -33,6 +35,24 @@ summary(katrina)
 
 ###### Survival Curves #######
 
-katrina_fit <- 
+# need fail column for hazard function below
+katrina$fail <- 1-katrina$survive
+katrina$reason <- as.factor(katrina$reason) #important for merge below
+summary(katrina$fail)
+sum(katrina$fail == 1) # 454/770 failed, math adds up
 
 
+failure_codes <- as.data.frame(cbind(reason=c(0, 1, 2, 3, 4), reason_w=c(NA,"flood","motor","surge","jammed")))
+str(failure_codes)
+
+katrina <- left_join(katrina, failure_codes, by='reason')
+str(katrina)
+
+katrina_fit <- survfit(Surv(hour, fail == 1) ~ 1, data = katrina)
+
+
+plot(katrina_fit) #TODO ggplot this
+
+str(katrina_fit)
+
+unique(katrina$reason_w)

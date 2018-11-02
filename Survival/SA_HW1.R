@@ -3,12 +3,12 @@
 ##      Orange 11        ##
 ###########################
 rm(list=ls())
-
+install.packages('survminer')
 library(dplyr)
 library(survival)
-
-#katrina = read.csv(file='C:\\Users\\jlmic\\Documents\\Survival Analysis\\Data\\katrina.csv')
-katrina = read.csv(file='C:\\Users\\Steven\\Documents\\MSA\\Analytics Foundations\\Survival\\data\\katrina.csv')
+library(survminer)
+katrina = read.csv(file='C:\\Users\\jlmic\\Documents\\Survival Analysis\\Data\\katrina.csv')
+#katrina = read.csv(file='C:\\Users\\Steven\\Documents\\MSA\\Analytics Foundations\\Survival\\data\\katrina.csv')
 
 View(katrina)
 dim(katrina) # 770 x 60
@@ -78,3 +78,25 @@ plot(flood_fit)
 plot(motor_fit)
 plot(surge_fit)
 plot(jam_fit)
+
+length(katrina$reason)
+
+###### Compare Curves ######
+katrina_reason <- survfit(Surv(time = hour, event = fail) ~ reason, data = katrina[katrina$reason != 0,])
+ggsurvplot(katrina_reason, conf.int = TRUE, palette = "grey")
+## DONT BIN THEM AS WATER AND MECHANICAL FAILURES
+
+### log-rank tests ###
+compare1 = survdiff(Surv(time = hour, event = fail) ~ reason, rho = 0, data = katrina[katrina$reason != 0,])
+compare2 = survminer::pairwise_survdiff(Surv(time = hour, event = fail) ~ reason, rho = 0, data = katrina[katrina$reason != 0,])
+
+### Hazard functions ###
+library('muhaz')
+
+katrina$hour2 <- ifelse(katrina$hour == 48 & katrina$fail == 0, 49, katrina$hour)
+
+katrina_haz <- with(katrina, kphaz.fit(hour2, fail))
+
+kphaz.plot(katrina_haz, main = "hazard function")
+
+ggsurvplot(katrina_fit, fun = "cumhaz", palette = "grey")

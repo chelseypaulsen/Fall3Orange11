@@ -3,6 +3,7 @@
 ##      Orange 11        ##
 ###########################
 rm(list=ls())
+<<<<<<< HEAD
 
 library(tidyverse)
 library(survival)
@@ -11,6 +12,16 @@ library(survminer)
 
 #katrina = read.csv(file='C:\\Users\\jlmic\\Documents\\Survival Analysis\\Data\\katrina.csv')
 katrina = read.csv(file='C:\\Users\\Steven\\Documents\\MSA\\Analytics Foundations\\Survival\\data\\katrina.csv')
+=======
+install.packages('survminer')
+library(dplyr)
+library(survival)
+library(survminer)
+katrina = read.csv(file='C:\\Users\\jlmic\\Documents\\Survival Analysis\\Data\\katrina.csv')
+#katrina = read.csv(file='C:\\Users\\Steven\\Documents\\MSA\\Analytics Foundations\\Survival\\data\\katrina.csv')
+
+View(katrina)
+>>>>>>> 0343e222cc28cacee4f856f974fa293b877a2c14
 dim(katrina) # 770 x 60
 
 ####### SUMMARY STATS ######
@@ -80,19 +91,29 @@ surge_fit = survfit(Surv(katrina.surge$hour, katrina.surge$fail == 1) ~ 1, data=
 jam_fit = survfit(Surv(katrina.jam$hour, katrina.jam$fail == 1) ~ 1, data=katrina.jam)
 
 # Plot them!
-plot(flood_fit)
-plot(motor_fit)
-plot(surge_fit)
-plot(jam_fit)
-
-plot(katrina_fit$surv, type="l")
-
-katrina_grp_fit = survfit(Surv(katrina$hour, katrina$fail == 1) ~ reason_w, data=katrina)
+katrina_grp_fit = survfit(Surv(katrina$hour, katrina$fail == 1) ~ reason_w, data=katrina[katrina$reason != 0,])
 summary(katrina_grp_fit)
 
 ggsurvplot(katrina_grp_fit, conf.int = FALSE, 
            legend="right", title="Pump Survival Curves",
-           legend.labs=c("flood","jammed","motor","no_failure","surge"),
+           legend.labs=c("flood","jammed","motor","surge"),
            legend.title="Reason for Failure",
            xlab="Time (hours)",
            ggtheme = theme_bw())
+## DONT BIN THEM AS WATER AND MECHANICAL FAILURES
+
+
+### log-rank tests ###
+compare1 = survdiff(Surv(time = hour, event = fail) ~ reason, rho = 0, data = katrina[katrina$reason != 0,])
+compare2 = survminer::pairwise_survdiff(Surv(time = hour, event = fail) ~ reason, rho = 0, data = katrina[katrina$reason != 0,])
+
+### Hazard functions ###
+library('muhaz')
+
+katrina$hour2 <- ifelse(katrina$hour == 48 & katrina$fail == 0, 49, katrina$hour)
+
+katrina_haz <- with(katrina, kphaz.fit(hour2, fail))
+
+kphaz.plot(katrina_haz, main = "hazard function")
+
+ggsurvplot(katrina_fit, fun = "cumhaz", palette = "grey")

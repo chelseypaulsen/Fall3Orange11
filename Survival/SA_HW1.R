@@ -3,7 +3,6 @@
 ##      Orange 11        ##
 ###########################
 rm(list=ls())
-<<<<<<< HEAD
 
 library(tidyverse)
 library(survival)
@@ -12,16 +11,7 @@ library(survminer)
 
 #katrina = read.csv(file='C:\\Users\\jlmic\\Documents\\Survival Analysis\\Data\\katrina.csv')
 katrina = read.csv(file='C:\\Users\\Steven\\Documents\\MSA\\Analytics Foundations\\Survival\\data\\katrina.csv')
-=======
-install.packages('survminer')
-library(dplyr)
-library(survival)
-library(survminer)
-katrina = read.csv(file='C:\\Users\\jlmic\\Documents\\Survival Analysis\\Data\\katrina.csv')
-#katrina = read.csv(file='C:\\Users\\Steven\\Documents\\MSA\\Analytics Foundations\\Survival\\data\\katrina.csv')
 
-View(katrina)
->>>>>>> 0343e222cc28cacee4f856f974fa293b877a2c14
 dim(katrina) # 770 x 60
 
 ####### SUMMARY STATS ######
@@ -67,7 +57,7 @@ unique(katrina$reason_w)
 
 # Plot survival curve Jacob's code
 katrina_fit = survfit(Surv(katrina$hour, katrina$fail == 1) ~ 1, data=katrina)
-katrina_fit
+
 summary(katrina_fit)
 # plot(katrina_fit)
 ggsurvplot(katrina_fit, data = katrina, conf.int = FALSE, legend="none",
@@ -91,7 +81,7 @@ surge_fit = survfit(Surv(katrina.surge$hour, katrina.surge$fail == 1) ~ 1, data=
 jam_fit = survfit(Surv(katrina.jam$hour, katrina.jam$fail == 1) ~ 1, data=katrina.jam)
 
 # Plot them!
-katrina_grp_fit = survfit(Surv(katrina$hour, katrina$fail == 1) ~ reason_w, data=katrina[katrina$reason != 0,])
+katrina_grp_fit = survfit(Surv(hour, fail) ~ reason, data=katrina[katrina$reason != 0,])
 summary(katrina_grp_fit)
 
 ggsurvplot(katrina_grp_fit, conf.int = FALSE, 

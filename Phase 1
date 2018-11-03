@@ -1,0 +1,17 @@
+#--------------------------#
+#                          #
+#   Simulation and Risk    #
+#        Phase 1           #
+#       Orange 11          #
+#                          #
+#--------------------------#
+
+# Needed Libraries for Analysis #
+library(graphics)
+library(ks)
+library("readxl")
+
+#reading the data frame. Notice that that the rows are now 1-48 instead of 3-51 in the xlsx file. 
+df <- read_xlsx("C:\\Users\\chels\\Desktop\\MSA\\Fall 3\\Simulation and Risk Analysis\\HW1\\Analysis_Data.xlsx",2,col_names=TRUE, col_types = c("date", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric"), range='A3:G51')
+
+

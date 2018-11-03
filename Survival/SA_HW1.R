@@ -2,7 +2,7 @@
 ## Survival Analysis HW1 ##
 ##      Orange 11        ##
 ###########################
-rm(list=ls()) #clears existing variables/functions from environment
+rm(list=ls()) #clears existing variables/functions from envi
 
 library(tidyverse)
 library(survival)
@@ -32,7 +32,8 @@ summary(katrina)
 View(katrina)
 
 katrina$fail = 1 - katrina$survive
-  
+median(katrina$hour[katrina$reason!=0])
+# median fail hour is 34th hour  
 # Min = 1
 # 1st Quartile = 27
 # Median = 45
@@ -116,12 +117,25 @@ library('muhaz')
 katrina$hour2 <- ifelse(katrina$hour == 48 & katrina$fail == 0, 49, katrina$hour)
 
 katrina_haz <- with(katrina, kphaz.fit(hour2, fail))
-katrina_grp_haz <- with(katrina[katrina$reason != 0,], kphaz.fit(hour2, fail, strata = reason))
+katrina_grp_haz <- with(katrina[katrina$reason != 0,], kphaz.fit(hour2, fail, strata = as.factor(reason_w)))
 summary(katrina_grp_haz$strata)
+summary(katrina$reason)
 
-kphaz.plot(katrina_haz, main = "hazard function")
-kphaz.plot(katrina_grp_haz, main = "grouped hazard function") #TODO Resolve error here for grouped hazard plot.
+# hazard Plot
+kphaz.plot(katrina_haz, main = "Hazard Function")
+#Alternate Hazard Plot
+ggplot(as.data.frame(katrina_haz))+
+  geom_line(aes(x=time, y=haz))+
+  xlab("Time (hrs)") + ylab("Hazard") + ggtitle("Pump Hazard Function")+
+  theme_bw()
 
-ggsurvplot(katrina_grp_fit, fun = "cumhaz", palette = "grey")
+#Grouped Hazard Plot
+kphaz.plot(katrina_grp_haz, main = "grouped hazard function") 
+#Alternate Grouped Hazard Plot
+#TODO Resolve error here for grouped hazard plot... because where did Group 5 come from?!
+ggplot(as.data.frame(katrina_grp_haz))+
+  geom_line(aes(x=time, y=haz, color=factor(strata)), size=1)+
+  xlab("Time (hrs)") + ylab("Hazard") + ggtitle("Pump Hazard Function")+
+  theme_bw()
 
-help("kphaz.plot")
+ggsurvplot(katrina_grp_fit, fun = "cumhaz")

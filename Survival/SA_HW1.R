@@ -2,7 +2,7 @@
 ## Survival Analysis HW1 ##
 ##      Orange 11        ##
 ###########################
-rm(list=ls())
+rm(list=ls()) #clears existing variables/functions from environment
 
 library(tidyverse)
 library(survival)
@@ -94,8 +94,21 @@ ggsurvplot(katrina_grp_fit, conf.int = FALSE,
 
 
 ### log-rank tests ###
-compare1 = survdiff(Surv(time = hour, event = fail) ~ reason, rho = 0, data = katrina[katrina$reason != 0,])
-compare2 = survminer::pairwise_survdiff(Surv(time = hour, event = fail) ~ reason, rho = 0, data = katrina[katrina$reason != 0,])
+
+#unweighted
+compare1a = survdiff(Surv(time = hour, event = fail) ~ reason, rho = 0, data = katrina[katrina$reason != 0,])
+compare1a
+#weighted
+compare1b = survdiff(Surv(time = hour, event = fail) ~ reason, rho = 1, data = katrina[katrina$reason != 0,])
+compare1b
+#default BH adjustment (whatever that is...)
+compare2a = pairwise_survdiff(Surv(time = hour, event = fail) ~ reason, rho = 0, data = katrina[katrina$reason != 0,])
+compare2a
+#Bonferoni adjustment
+compare2b = pairwise_survdiff(Surv(time = hour, event = fail) ~ reason, rho = 0, data = katrina[katrina$reason != 0,], p.adjust.method="bonferroni")
+compare2b
+# Results: all comparisons are significantly different, max is <0.003
+
 
 ### Hazard functions ###
 library('muhaz')
@@ -103,7 +116,12 @@ library('muhaz')
 katrina$hour2 <- ifelse(katrina$hour == 48 & katrina$fail == 0, 49, katrina$hour)
 
 katrina_haz <- with(katrina, kphaz.fit(hour2, fail))
+katrina_grp_haz <- with(katrina[katrina$reason != 0,], kphaz.fit(hour2, fail, strata = reason))
+summary(katrina_grp_haz$strata)
 
 kphaz.plot(katrina_haz, main = "hazard function")
+kphaz.plot(katrina_grp_haz, main = "grouped hazard function") #TODO Resolve error here for grouped hazard plot.
 
-ggsurvplot(katrina_fit, fun = "cumhaz", palette = "grey")
+ggsurvplot(katrina_grp_fit, fun = "cumhaz", palette = "grey")
+
+help("kphaz.plot")

@@ -118,8 +118,9 @@ katrina$hour2 <- ifelse(katrina$hour == 48 & katrina$fail == 0, 49, katrina$hour
 
 katrina_haz <- with(katrina, kphaz.fit(hour2, fail))
 katrina_grp_haz <- with(katrina[katrina$reason != 0,], kphaz.fit(hour2, fail, strata = as.factor(reason_w)))
-summary(katrina_grp_haz$strata)
+summary(katrina_grp_haz$strata) # Ugh... where did Group 5 come from?!
 summary(katrina$reason)
+help(kphaz.fit)
 
 # hazard Plot
 kphaz.plot(katrina_haz, main = "Hazard Function")
@@ -127,6 +128,21 @@ kphaz.plot(katrina_haz, main = "Hazard Function")
 ggplot(as.data.frame(katrina_haz))+
   geom_line(aes(x=time, y=haz))+
   xlab("Time (hrs)") + ylab("Hazard") + ggtitle("Pump Hazard Function")+
+  theme_bw()
+
+#Stratified Hazard Plot, but it's not very informative
+katrina_haz_1 <- with(katrina[katrina$reason == 1,], kphaz.fit(hour2, fail))
+katrina_haz_2 <- with(katrina[katrina$reason == 2,], kphaz.fit(hour2, fail))
+katrina_haz_3 <- with(katrina[katrina$reason == 3,], kphaz.fit(hour2, fail))
+katrina_haz_4 <- with(katrina[katrina$reason == 4,], kphaz.fit(hour2, fail))
+
+ggplot()+
+  geom_line(data=as.data.frame(katrina_haz_1), aes(x=time, y=haz))+
+  geom_line(data=as.data.frame(katrina_haz_2), aes(x=time, y=haz))+
+  geom_line(data=as.data.frame(katrina_haz_3), aes(x=time, y=haz))+
+  geom_line(data=as.data.frame(katrina_haz_4), aes(x=time, y=haz))+
+  xlab("Time (hrs)") + ylab("Hazard") + ggtitle("Pump Hazard Functions")+
+  scale_color_manual(labels = c("flood", "jammed", "motor", "surge"))
   theme_bw()
 
 #Grouped Hazard Plot

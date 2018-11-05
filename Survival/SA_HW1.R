@@ -32,8 +32,12 @@ summary(katrina)
 View(katrina)
 
 katrina$fail = 1 - katrina$survive
-median(katrina$hour[katrina$reason!=0])
-# median fail hour is 34th hour  
+median(katrina$hour[katrina$reason!=0]) # median fail hour is 34th hour  
+median(katrina$hour[katrina$reason==1]) # 26th hr if fail by flood
+median(katrina$hour[katrina$reason==2]) # 45th hr motor
+median(katrina$hour[katrina$reason==3]) # 42nd hr surge
+median(katrina$hour[katrina$reason==4]) # 25th hr jamming
+
 # Min = 1
 # 1st Quartile = 27
 # Median = 45
@@ -87,7 +91,7 @@ summary(katrina_grp_fit)
 
 ggsurvplot(katrina_grp_fit, conf.int = FALSE, 
            legend="right", title="Pump Survival Curves",
-           legend.labs=c("flood","jammed","motor","surge"),
+           legend.labs=c("flood","motor","surge","jammed"),
            legend.title="Reason for Failure",
            xlab="Time (hours)",
            ggtheme = theme_bw())
@@ -126,9 +130,11 @@ help(kphaz.fit)
 kphaz.plot(katrina_haz, main = "Hazard Function")
 #Alternate Hazard Plot
 ggplot(as.data.frame(katrina_haz))+
-  geom_line(aes(x=time, y=haz))+
+  geom_line(aes(x=time, y=haz), color="#F8766D", size=1)+
   xlab("Time (hrs)") + ylab("Hazard") + ggtitle("Pump Hazard Function")+
   theme_bw()
+
+write.csv(katrina_haz, file="hazardplot.csv")
 
 #Stratified Hazard Plot, but it's not very informative
 katrina_haz_1 <- with(katrina[katrina$reason == 1,], kphaz.fit(hour2, fail))
@@ -142,7 +148,7 @@ ggplot()+
   geom_line(data=as.data.frame(katrina_haz_3), aes(x=time, y=haz))+
   geom_line(data=as.data.frame(katrina_haz_4), aes(x=time, y=haz))+
   xlab("Time (hrs)") + ylab("Hazard") + ggtitle("Pump Hazard Functions")+
-  scale_color_manual(labels = c("flood", "jammed", "motor", "surge"))
+  scale_color_manual(labels = c("flood", "motor", "jammed", "surge"))
   theme_bw()
 
 #Grouped Hazard Plot

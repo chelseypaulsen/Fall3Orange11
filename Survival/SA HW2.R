@@ -10,13 +10,14 @@ library(tidyverse)
 library(survival)
 #install.packages("survminer")
 library(survminer)
+#install.packages('flexsurv')
 library(flexsurv)
 library(dplyr)
 
 
-#katrina = read.csv(file='C:\\Users\\jlmic\\Documents\\Survival Analysis\\Data\\katrina.csv')
+katrina = read.csv(file='C:\\Users\\jlmic\\Documents\\Survival Analysis\\Data\\katrina.csv')
 #katrina = read.csv(file='C:\\Users\\Steven\\Documents\\MSA\\Analytics Foundations\\Survival\\data\\katrina.csv')
-katrina = read.csv(file='C:\\Users\\chels\\Desktop\\MSA\\Fall 3\\Survival Analysis\\2017SA Data\\katrina.csv')
+#katrina = read.csv(file='C:\\Users\\chels\\Desktop\\MSA\\Fall 3\\Survival Analysis\\2017SA Data\\katrina.csv')
  
 #censuring everything but flooding
 Surv(time = katrina$hour, event = katrina$reason == 1)

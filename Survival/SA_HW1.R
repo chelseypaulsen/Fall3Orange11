@@ -9,8 +9,8 @@ library(survival)
 #install.packages("survminer")
 library(survminer)
 
-katrina = read.csv(file='C:\\Users\\jlmic\\Documents\\Survival Analysis\\Data\\katrina.csv')
-#katrina = read.csv(file='C:\\Users\\Steven\\Documents\\MSA\\Analytics Foundations\\Survival\\data\\katrina.csv')
+#katrina = read.csv(file='C:\\Users\\jlmic\\Documents\\Survival Analysis\\Data\\katrina.csv')
+katrina = read.csv(file='C:\\Users\\Steven\\Documents\\MSA\\Analytics Foundations\\Survival\\data\\katrina.csv')
 
 dim(katrina) # 770 x 60
 
@@ -148,7 +148,7 @@ ggplot()+
   geom_line(data=as.data.frame(katrina_haz_3), aes(x=time, y=haz))+
   geom_line(data=as.data.frame(katrina_haz_4), aes(x=time, y=haz))+
   xlab("Time (hrs)") + ylab("Hazard") + ggtitle("Pump Hazard Functions")+
-  scale_color_manual(labels = c("flood", "motor", "jammed", "surge"))
+  scale_color_manual(labels = c("flood", "motor", "jammed", "surge"))+
   theme_bw()
 
 #Grouped Hazard Plot

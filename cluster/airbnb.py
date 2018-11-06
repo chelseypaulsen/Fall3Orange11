@@ -6,9 +6,9 @@ import re
 from sklearn.decomposition import pca
 
 
-os.chdir("C:/Users/Steven/Documents/MSA/Analytics Foundations/Clustering/data/")
+#os.chdir("C:/Users/Steven/Documents/MSA/Analytics Foundations/Clustering/data/")
 # os.chdir("C:/Users/Chelsey's folder path")
-# os.chdir("C:/Users/Derrick's folder path")
+os.chdir("C:/Users/derri/Documents/NC State Classes/Clustering/Clustering/boston-airbnb-open-data")
 # os.chdir("C:/Users/Jacobs's folder path")
 
 # import these sexy files

@@ -31,3 +31,28 @@ listings[['neighbourhood', 'neighbourhood_cleansed']].tail(20)
 listings.info()
 listings['price'] = listings['price'].replace('[\$,]', '', regex=True).astype(float)
 listings_nhd = listings.groupby(by="neighbourhood_cleansed")[['price', 'review_scores_rating', 'review_scores_location']].agg(['mean', 'count'])
+
+###### ATTRACTION PROXIMITY #######
+# TODO Pull attraction information from TripAdvisor / Google (def names & locations, maybe ratings/rank)
+# TODO Calc distance of each listing to each attraction
+# TODO? Visualize on map
+# TODO Location clustering
+# TODO Identify impact of clusters (and other variables) on location score
+#
+
+###### SENTIMENT EXTRACTION #######
+# TODO Tokenize reviews, extract
+# TODO Sentiment extraction for each word, then calc overall sentiment for review
+# TODO Sentiment Clustering
+#   Strong negative reviews
+#   Strong positive reviews
+#   Neutral reviews
+# TODO? Visualize on map
+# TODO Identify distinguishing features b/w positive and negative reviews
+#
+
+###### REVENUE CALCULATIONS #######
+# TODO Calc average nightly rate of each cluster
+# TODO Calc future booking frequency from calendar for each property
+# TODO Calc average future revenue for each cluster
+# TODO Visualize

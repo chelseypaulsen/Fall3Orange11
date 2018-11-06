@@ -55,7 +55,7 @@ median(P2019n)
 min(P2019n)
 max(P2019n)
 
-hist(P2019n, breaks=50, col = 'cornflowerblue', main='2019 Cost Distribution Using Normal Approximation for 2006-2012', xlab='Final Value')
+hist(P2019n, breaks=50, col = 'cornflowerblue', main='2019 Cost Distribution Using Normal Approximation for 2006-2012', xlab='2019 Cost (Thousand Dollars)')
 abline(v = 2279.8 , col="darkorange3", lwd=2)
 mtext("2006 Cost", at=2279.8 -400, col="darkorange3")
 abline(v = median(P2019n) , col="darkorange3", lwd=2)
@@ -108,9 +108,10 @@ mean(P2019k)
 sd(P2019k)
 median(P2019k)
 
-hist(P2019k, breaks=50, col = 'cornflowerblue', main='2019 Cost Distribution Using Kernel Density Estimate', xlab='Final Value')
+hist(P2019k, breaks=50, col = 'cornflowerblue', main='2019 Cost Distribution Using Kernel Density Estimate', xlab='2019 Cost (Thousand Dollars)')
 abline(v = 2279.8 , col="darkorange3", lwd=2)
 mtext("2006 Cost", at=2279.8 -600, col="darkorange3")
 abline(v = median(P2019k) , col="darkorange3", lwd=2)
 mtext("Median", at=median(P2019k)+600 , col="darkorange3")
+
 

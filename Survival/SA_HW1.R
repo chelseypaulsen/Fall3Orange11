@@ -65,7 +65,7 @@ katrina_fit = survfit(Surv(katrina$hour, katrina$fail == 1) ~ 1, data=katrina)
 
 summary(katrina_fit)
 # plot(katrina_fit)
-ggsurvplot(katrina_fit, data = katrina, conf.int = FALSE, legend="none",
+ggsurvplot(katrina_fit, data = katrina, conf.int = TRUE, legend="none",
            title="Pump Survival Curve",
            xlab="Time (hours)",
            ggtheme = theme_bw())
@@ -89,7 +89,7 @@ jam_fit = survfit(Surv(katrina.jam$hour, katrina.jam$fail == 1) ~ 1, data=katrin
 katrina_grp_fit = survfit(Surv(hour, fail) ~ reason, data=katrina[katrina$reason != 0,])
 summary(katrina_grp_fit)
 
-ggsurvplot(katrina_grp_fit, conf.int = FALSE, 
+ggsurvplot(katrina_grp_fit, conf.int = TRUE, 
            legend="right", title="Pump Survival Curves",
            legend.labs=c("flood","motor","surge","jammed"),
            legend.title="Reason for Failure",

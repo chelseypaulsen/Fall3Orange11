@@ -1,4 +1,4 @@
-import seaborn
+import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
 pd.set_option('display.max_columns',10)
@@ -50,6 +50,7 @@ listings_nhd = listings.groupby(by="neighbourhood_cleansed")[['price', 'review_s
 import nltk
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 import pickle as pkl
+from langdetect import detect
 nltk.download('vader_lexicon')
 sid = SentimentIntensityAnalyzer()
 
@@ -64,14 +65,25 @@ reviews['sentiment'] = reviews['comments'].apply(lambda x: sid.polarity_scores(x
 reviews = pd.concat([reviews, reviews['sentiment'].apply(pd.Series)], axis=1)
 reviews = reviews.drop(['sentiment'], axis=1)
 pkl.dump(reviews, open("reviews_pkl", "wb"))
+reviews = pkl.load(open( "reviews_pkl", "rb"))
 
-reviews['compound_norm'] = (reviews['compound']-reviews['compound'].mean())/reviews['compound'].std()
-reviews['compound_norm'].min()
-
-#TODO plot this sentiment distribution
+reviews['lang'] = reviews['comments'].apply(lambda x: detect(x))
 
 # normalizing the resulting compound sentiment
-from sklearn import preprocessing
+reviews['compound_norm'] = (reviews['compound']-reviews['compound'].mean())/reviews['compound'].std()
+reviews['compound'].std()
+sns.distplot(reviews['compound'])
+plt.clf()
+
+# Plot this sentiment distribution
+sns.distplot(reviews['compound_norm'])
+cond1 = reviews['compound_norm'] > -2.45
+cond2 = reviews['compound_norm'] < -2.3
+temp = reviews[cond1 & cond2]
+temp2 = reviews[reviews['compound'] == 0]
+temp3 = reviews[reviews['compound_norm'] < -.9]
+
+
 
 # Unique words from each sentiment group
 

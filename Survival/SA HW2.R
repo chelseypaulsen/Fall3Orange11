@@ -59,3 +59,25 @@ plot(fit_llogis, type = "cumhaz", ci = TRUE, conf.int = FALSE, las = 1, bty = "n
      xlab = "hour", ylab = "cumulative hazard",
      main = "log-logistic distribution")
 
+##### Choose Weibull Distribution
+
+# What pumps should we fix?
+
+# How to Fix the 20 pumps
+exp(coef(fit_wb))
+
+# Reason 1
+# shape       scale      backup bridgecrane       servo   trashrack   elevation       slope         age 
+# 1.5633951  92.0653701   1.2755469   0.8031164   1.3852000   0.7934489   1.0537841   0.9417365   1.0608296 
+
+# Reason 2
+# shape       scale      backup bridgecrane       servo   trashrack   elevation       slope         age 
+# 5.1741457  14.2477735   1.0170329   1.0169381   0.9310780  40.8804719   0.9972662   1.0460434   1.2053073 
+
+# Reason 3
+# shape       scale      backup bridgecrane       servo   trashrack   elevation       slope         age 
+# 3.8992925 436.7472926   1.0590973   0.9401684   0.8714111   0.9366070   1.0269645   0.9914426   0.8026416 
+
+# Reason 4
+# shape       scale      backup bridgecrane       servo   trashrack   elevation       slope         age 
+# 1.8280700   0.0742323   0.8588016   0.8618851   0.7425047   0.6660426   2.3585729   0.8884372   2.3461911 

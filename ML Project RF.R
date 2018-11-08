@@ -9,15 +9,16 @@ View(df_ML)
 
 # Split 'Training' dataset
 library(caret)
-intrain<-createDataPartition(y=sub_train$classe,p=0.7,list=FALSE)
-training<-m_train[intrain,]
-testing<-m_train[-intrain,]
+intrain<-createDataPartition(y=df_ML$target,p=0.7,list=FALSE)
+df_ML_train<-df_ML[intrain,]
+df_ML_validate<-df_ML[-intrain,]
 
 dim(df_ML_train)
+dim(df_ML_validate)
 
 # Assign Random Forest Model
 library(randomForest)
-rf_train = randomForest(target ~ ., data=df_ML_train, importance=TRUE, ntree=50)
+rf_ML = randomForest(target ~ ., data=df_ML_train, importance=TRUE, ntree=50)
 print(rf_ML)
 
 # Check Variable Importance
@@ -28,26 +29,33 @@ rf_train_pred = predict(rf_ML, df_ML_train)
 
 View(rf_train_pred)
 
-df_ML_train$Prediction = rf_ML_pred
+df_ML_train$Prediction = rf_train_pred
 df_ML_train$abserror = abs(df_ML_train$target - df_ML_train$Prediction)
-View(df_ML_train)
+dim(df_ML_train)
 
 MAE = mean(df_ML_train$abserror)
 print(MAE)
 
-# Predict on Test Data
-df_ML_test = read.csv('C:\\Users\\jlmic\\Documents\\Machine Learning\\Data\\testData.csv')
+##################################
+# Predict on Validate Data #
+##################################
+
+dim(df_ML_validate)
+
+rf_valid_pred = predict(rf_ML, df_ML_validate)
+
+View(rf_valid_pred)
+
+df_ML_validate$Prediction = rf_valid_pred
+df_ML_validate$abserror = abs(df_ML_validate$target - df_ML_validate$Prediction)
+dim(df_ML_validate)
+
+MAE = mean(df_ML_validate$abserror)
+print(MAE)
+
+##################################
+# Predict on test Data for Submission#
+##################################
+
+df_ML_test = select(df_ML_test, -X)
 View(df_ML_test)
-
-rf_ML_pred = predict(rf_ML, df_ML_test)
-
-View(rf_ML_pred)
-
-df_ML_train$Prediction = rf_ML_pred
-df_ML_train$abserror = abs(df_ML_train$target - df_ML_train$Prediction)
-View(df_ML_train)
-
-MAE = mean(df_ML_train$abserror)
-print(MAE)
-
-

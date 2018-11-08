@@ -18,7 +18,7 @@ library(dplyr)
 katrina = read.csv(file='C:\\Users\\jlmic\\Documents\\Survival Analysis\\Data\\katrina.csv')
 #katrina = read.csv(file='C:\\Users\\Steven\\Documents\\MSA\\Analytics Foundations\\Survival\\data\\katrina.csv')
 #katrina = read.csv(file='C:\\Users\\chels\\Desktop\\MSA\\Fall 3\\Survival Analysis\\2017SA Data\\katrina.csv')
- 
+View(katrina)
 #censuring everything but flooding
 Surv(time = katrina$hour, event = katrina$reason == 1)
 #with(katrina, Surv(time = hour, event = reason == 1)) or can use this.
@@ -59,12 +59,22 @@ plot(fit_llogis, type = "cumhaz", ci = TRUE, conf.int = FALSE, las = 1, bty = "n
      xlab = "hour", ylab = "cumulative hazard",
      main = "log-logistic distribution")
 
-##### Choose Weibull Distribution
+##### Choose Weibull Distribution # Checks OUT BOOM
+fit_wb2 <- flexsurvreg(Surv(hour, reason == 1) ~ backup + bridgecrane + servo + trashrack , data = katrina, dist = "weibull")
+
+plot(fit_wb2, type = "cumhaz", ci = TRUE, conf.int = FALSE, las = 1, bty = "n",
+     xlab = "hour", ylab = "cumulative hazard", main = "weibull distribution")
 
 # What pumps should we fix?
+# First 20 that do not have a servo
+# 6 of the lowest pumps had a servo
+sorted_katrina <- katrina[order(katrina$hour),]
+sorted_servo = sorted_katrina[sorted_katrina$servo == 0,]
+head(sorted_servo,20)
 
-# How to Fix the 20 pumps
-exp(coef(fit_wb))
+# How to Fix the 20 pumps? With a servo
+exp(coef(fit_wb2))
+coef(fit_wb)
 
 # Reason 1
 # shape       scale      backup bridgecrane       servo   trashrack   elevation       slope         age 
@@ -81,3 +91,12 @@ exp(coef(fit_wb))
 # Reason 4
 # shape       scale      backup bridgecrane       servo   trashrack   elevation       slope         age 
 # 1.8280700   0.0742323   0.8588016   0.8618851   0.7425047   0.6660426   2.3585729   0.8884372   2.3461911 
+
+# How many of each upgrade?
+sum(katrina$backup == 1)
+sum(katrina$bridgecrane == 1)
+sum(katrina$servo == 1)
+sum(katrina$trashrack == 1)
+
+
+

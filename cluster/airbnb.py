@@ -1,14 +1,16 @@
 import seaborn
 import matplotlib.pyplot as plt
 import pandas as pd
+pd.set_option('display.max_columns',10)
 import os
 import re
+import numpy as np
 from sklearn.decomposition import pca
 
 
-#os.chdir("C:/Users/Steven/Documents/MSA/Analytics Foundations/Clustering/data/")
+os.chdir("C:/Users/Steven/Documents/MSA/Analytics Foundations/Clustering/data/")
 # os.chdir("C:/Users/Chelsey's folder path")
-os.chdir("C:/Users/derri/Documents/NC State Classes/Clustering/Clustering/boston-airbnb-open-data")
+#os.chdir("C:/Users/derri/Documents/NC State Classes/Clustering/Clustering/boston-airbnb-open-data")
 # os.chdir("C:/Users/Jacobs's folder path")
 
 # import these sexy files
@@ -42,7 +44,40 @@ listings_nhd = listings.groupby(by="neighbourhood_cleansed")[['price', 'review_s
 
 ###### SENTIMENT EXTRACTION #######
 # TODO Tokenize reviews, extract
+#
+#
 # TODO Sentiment extraction for each word, then calc overall sentiment for review
+import nltk
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
+import pickle as pkl
+nltk.download('vader_lexicon')
+sid = SentimentIntensityAnalyzer()
+
+reviews.head()
+reviews.shape[0] == reviews.id.unique().shape[0] #confirming this id column is unique to each ID
+reviews.shape[0] - reviews.comments.count() # 53 blank/NaN reviews
+reviews['comments'] = reviews['comments'].fillna('')
+reviews.shape[0] - reviews.comments.count() # No more blanks
+
+reviews['sentiment'] = reviews['comments'].apply(lambda x: sid.polarity_scores(x))
+
+reviews = pd.concat([reviews, reviews['sentiment'].apply(pd.Series)], axis=1)
+reviews = reviews.drop(['sentiment'], axis=1)
+pkl.dump(reviews, open("reviews_pkl", "wb"))
+
+reviews['compound_norm'] = (reviews['compound']-reviews['compound'].mean())/reviews['compound'].std()
+reviews['compound_norm'].min()
+
+#TODO plot this sentiment distribution
+
+# normalizing the resulting compound sentiment
+from sklearn import preprocessing
+
+# Unique words from each sentiment group
+
+# Build into a listing x keyword matrix
+#
+# compound value from vader
 # TODO Sentiment Clustering
 #   Strong negative reviews
 #   Strong positive reviews

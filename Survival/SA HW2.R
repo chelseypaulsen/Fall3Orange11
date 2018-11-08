@@ -57,7 +57,7 @@ fit_llogis <- flexsurvreg(Surv(hour, reason == 1) ~ backup + bridgecrane + servo
 
 plot(fit_llogis, type = "cumhaz", ci = TRUE, conf.int = FALSE, las = 1, bty = "n",
      xlab = "hour", ylab = "cumulative hazard",
-     main = "log-logistic distribution")
+     main = "log-logistic distribution", xmax=20)
 
 ##### Choose Weibull Distribution # Checks OUT BOOM
 fit_wb2 <- flexsurvreg(Surv(hour, reason == 1) ~ backup + bridgecrane + servo + trashrack , data = katrina, dist = "weibull")
@@ -72,13 +72,22 @@ sorted_katrina <- katrina[order(katrina$hour),]
 sorted_servo = sorted_katrina[sorted_katrina$servo == 0,]
 head(sorted_servo,20)
 
+
+
 # How to Fix the 20 pumps? With a servo
-exp(coef(fit_wb2))
-coef(fit_wb)
+
+summary(fit)
+exp(coef(fit))
 
 # Reason 1
 # shape       scale      backup bridgecrane       servo   trashrack   elevation       slope         age 
 # 1.5633951  92.0653701   1.2755469   0.8031164   1.3852000   0.7934489   1.0537841   0.9417365   1.0608296 
+
+# Standard Error
+summary(fit)$table[,2]
+
+# (Intercept)      backup bridgecrane       servo   trashrack   elevation       slope         age  Log(scale) 
+# 0.57055346  0.12439606  0.19787896  0.13831128  0.12435523  0.07793087  0.01754107  0.06877616  0.08584394
 
 # Reason 2
 # shape       scale      backup bridgecrane       servo   trashrack   elevation       slope         age 

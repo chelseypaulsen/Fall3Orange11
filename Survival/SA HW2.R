@@ -34,7 +34,7 @@ fit_wb <- flexsurvreg(Surv(hour, reason == 1) ~ backup + bridgecrane + servo + t
                         slope + age, data = katrina, dist = "weibull")
 
 plot(fit_wb, type = "cumhaz", ci = TRUE, conf.int = FALSE, las = 1, bty = "n",
-     xlab = "Hour", ylab = "Cumulative Hazard", main = "Weibull Distribution Cummulative Hazard Plot", xlim=c(0, 50),ylim=range(0,0.25))
+     xlab = "Hour", ylab = "Cumulative Hazard", main = "Weibull Distribution Cummulative Hazard Plot", xlim=c(0, 50),ylim=c(0,0.25))
 
 #exponential - doesn't look good
 #exponential - doesn't look good

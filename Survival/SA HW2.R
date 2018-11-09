@@ -74,14 +74,20 @@ head(sorted_servo,20)
 
 
 
+
+bounded_sorted_servo = sorted_servo[which(sorted_servo$hour < 35 & sorted_servo$hour > 26),]
+summary(sorted_servo$hour)
+
+bounded_sorted_sevo = tail(bounded_sorted_servo,20)
+
 # How to Fix the 20 pumps? With a servo
 
 summary(fit)
 exp(coef(fit))
 
 # Reason 1
-# shape       scale      backup bridgecrane       servo   trashrack   elevation       slope         age 
-# 1.5633951  92.0653701   1.2755469   0.8031164   1.3852000   0.7934489   1.0537841   0.9417365   1.0608296 
+#(Intercept)      backup bridgecrane       servo   trashrack   elevation       slope         age 
+#92.0653701   1.2755469   0.8031164   1.3852000   0.7934489   1.0537841   0.9417365   1.0608296 
 
 # Standard Error
 summary(fit)$table[,2]
@@ -106,6 +112,3 @@ sum(katrina$backup == 1)
 sum(katrina$bridgecrane == 1)
 sum(katrina$servo == 1)
 sum(katrina$trashrack == 1)
-
-
-

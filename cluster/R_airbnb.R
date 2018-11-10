@@ -17,6 +17,10 @@ df_calendar = read_csv(file='C:\\Users\\jlmic\\Documents\\Clustering\\Data\\cale
 df_listings = read_csv(file='C:\\Users\\jlmic\\Documents\\Clustering\\Data\\listings.csv')
 df_reviews = read_csv(file='C:\\Users\\jlmic\\Documents\\Clustering\\Data\\reviews.csv')
 
+#df_calendar = read_csv(file='C:\\Users\\chels\\Desktop\\MSA\\Fall 3\\Clustering\\Project 1\\boston-airbnb-open-data\\calendar.csv')
+#df_listings = read_csv(file='C:\\Users\\chels\\Desktop\\MSA\\Fall 3\\Clustering\\Project 1\\boston-airbnb-open-data\\listings.csv')
+#df_reviews = read_csv(file='C:\\Users\\chels\\Desktop\\MSA\\Fall 3\\Clustering\\Project 1\\boston-airbnb-open-data\\reviews.csv')
+
 View(df_calendar)
 View(df_listings)
 View(df_reviews)
@@ -41,6 +45,51 @@ library(dplyr)
 library(data.table)
 library(ggrepel)
 
+################################################################################################
+### added this so chelsey could use the dance register_google function! 
+register_google <- function (key, account_type, client, signature, second_limit, day_limit) {
+  
+  # get current options
+  options <- getOption("ggmap")
+  
+  # check for client/sig specs
+  if (!missing(client) &&  missing(signature) ) {
+    stop("if client is specified, signature must be also.")
+  }
+  if ( missing(client) && !missing(signature) ) {
+    stop("if signature is specified, client must be also.")
+  }
+  if (!missing(client) && !missing(signature) ) {
+    if (goog_account() == "standard" && missing(account_type)) {
+      stop("if providing client and signature, the account type must be premium.")
+    }
+  }
+  
+  # construct new ones
+  if(!missing(key)) options$google$key <- key
+  if(!missing(account_type)) options$google$account_type <- account_type
+  if(!missing(day_limit)) options$google$day_limit <- day_limit
+  if(!missing(second_limit)) options$google$second_limit <- second_limit
+  if(!missing(client)) options$google$client <- client
+  if(!missing(signature)) options$google$signature <- signature
+  
+  # # set premium defaults
+  if (!missing(account_type) && account_type == "premium") {
+    if(missing(day_limit)) options$google$day_limit <- 100000
+  }
+  
+  # class
+  class(options) <- "ggmap_credentials"
+  
+  # set new options
+  options(ggmap = options)
+  
+  # return
+  invisible(NULL)
+}
+
+######################################################################################################
+
 register_google("AIzaSyAU41QgbGF0NnbyAl6F983RVqd4ILj4axU")
 # To-Do- List
 
@@ -57,6 +106,8 @@ register_google("AIzaSyAU41QgbGF0NnbyAl6F983RVqd4ILj4axU")
 # Holocaust Memorial	10	2339	42.36127	-71.057555
  
 df_top10 = read_csv(file='C:\\Users\\jlmic\\Documents\\Clustering\\Data\\Top Attractions.csv')
+#df_top10 = read_csv(file='C:\\Users\\chels\\Desktop\\MSA\\Fall 3\\Clustering\\Project 1\\boston-airbnb-open-data\\Top Attractions.csv')
+
 View(df_top10)
 top10 = df_top10[1:10,4:5]
 dim(top10)
@@ -137,18 +188,69 @@ commclus2_token    <- commclus2 %>% unnest_tokens(word, comments) %>%
   mutate(word_stem = wordStem(word, language="english")) %>%
   filter(!is.na(word_stem)) %>%
   count(word_stem, sort = TRUE) %>% mutate(p = n/sum(n)) %>% filter(p >0.001)
-View(commclus1_token)
+View(commclus2_token)
 
 commclus3_token    <- commclus3 %>% unnest_tokens(word, comments) %>%
   anti_join(stop_words) %>% mutate(word = str_extract(word, "[a-z']+")) %>% 
   mutate(word_stem = wordStem(word, language="english")) %>%
   filter(!is.na(word_stem)) %>%
   count(word_stem, sort = TRUE) %>% mutate(p = n/sum(n)) %>% filter(p >0.001)
-View(commclus1_token)
+View(commclus3_token)
+
+commclus4_token    <- commclus4 %>% unnest_tokens(word, comments) %>%
+  anti_join(stop_words) %>% mutate(word = str_extract(word, "[a-z']+")) %>% 
+  mutate(word_stem = wordStem(word, language="english")) %>%
+  filter(!is.na(word_stem)) %>%
+  count(word_stem, sort = TRUE) %>% mutate(p = n/sum(n)) %>% filter(p >0.001)
+View(commclus4_token)
+
+commclus5_token    <- commclus5 %>% unnest_tokens(word, comments) %>%
+  anti_join(stop_words) %>% mutate(word = str_extract(word, "[a-z']+")) %>% 
+  mutate(word_stem = wordStem(word, language="english")) %>%
+  filter(!is.na(word_stem)) %>%
+  count(word_stem, sort = TRUE) %>% mutate(p = n/sum(n)) %>% filter(p >0.001)
+View(commclus5_token)
+
+commclus6_token    <- commclus6 %>% unnest_tokens(word, comments) %>%
+  anti_join(stop_words) %>% mutate(word = str_extract(word, "[a-z']+")) %>% 
+  mutate(word_stem = wordStem(word, language="english")) %>%
+  filter(!is.na(word_stem)) %>%
+  count(word_stem, sort = TRUE) %>% mutate(p = n/sum(n)) %>% filter(p >0.001)
+View(commclus6_token)
+
+commclus7_token    <- commclus7 %>% unnest_tokens(word, comments) %>%
+  anti_join(stop_words) %>% mutate(word = str_extract(word, "[a-z']+")) %>% 
+  mutate(word_stem = wordStem(word, language="english")) %>%
+  filter(!is.na(word_stem)) %>%
+  count(word_stem, sort = TRUE) %>% mutate(p = n/sum(n)) %>% filter(p >0.001)
+View(commclus7_token)
+
+commclus8_token    <- commclus8 %>% unnest_tokens(word, comments) %>%
+  anti_join(stop_words) %>% mutate(word = str_extract(word, "[a-z']+")) %>% 
+  mutate(word_stem = wordStem(word, language="english")) %>%
+  filter(!is.na(word_stem)) %>%
+  count(word_stem, sort = TRUE) %>% mutate(p = n/sum(n)) %>% filter(p >0.001)
+View(commclus8_token)
+
+commclus9_token    <- commclus9 %>% unnest_tokens(word, comments) %>%
+  anti_join(stop_words) %>% mutate(word = str_extract(word, "[a-z']+")) %>% 
+  mutate(word_stem = wordStem(word, language="english")) %>%
+  filter(!is.na(word_stem)) %>%
+  count(word_stem, sort = TRUE) %>% mutate(p = n/sum(n)) %>% filter(p >0.001)
+View(commclus9_token)
+
+commclus10_token    <- commclus10 %>% unnest_tokens(word, comments) %>%
+  anti_join(stop_words) %>% mutate(word = str_extract(word, "[a-z']+")) %>% 
+  mutate(word_stem = wordStem(word, language="english")) %>%
+  filter(!is.na(word_stem)) %>%
+  count(word_stem, sort = TRUE) %>% mutate(p = n/sum(n)) %>% filter(p >0.001)
+View(commclus10_token)
 
 # Make matrix whose columns are the words
 # nrow = number of locations?
-u_words <- sort(unique(c(commclus1_token$word_stem,commclus2_token$word_stem,commclus3_token$word_stem)))
+u_words <- sort(unique(c(commclus1_token$word_stem,commclus2_token$word_stem,commclus3_token$word_stem,commclus4_token$word_stem,
+                         commclus5_token$word_stem,commclus6_token$word_stem,commclus7_token$word_stem,commclus8_token$word_stem,
+                         commclus9_token$word_stem,commclus10_token$word_stem)))
 View(u_words)
 bag_ow <- as.data.frame(matrix(0,nrow=10,ncol=length(u_words))) # make a matrix whose colums are the words
 View(bag_ow)
@@ -156,16 +258,66 @@ View(bag_ow)
 # assign data
 names(bag_ow) <- u_words
 
-# for (ii in 1:nrow(comments_token)) {
-#   idx <- which(comments_token$word_stem[ii] == u_words)
-#   bag_ow[1,idx] = comments_token$p[ii]
-# }
-# 
-# for (ii in 1:nrow(comments_token)) {
-#   idx <- which(comments_token$word_stem[ii] == u_words)
-#   bag_ow[1,idx] = comments_token$p[ii]
-# }
+for (ii in 1:nrow(commclus1_token)) {
+  idx <- which(commclus1_token$word_stem[ii] == u_words)
+  bag_ow[1,idx] = commclus1_token$p[ii]
+}
 
+for (ii in 1:nrow(commclus2_token)) {
+  idx <- which(commclus2_token$word_stem[ii] == u_words)
+  bag_ow[2,idx] = commclus2_token$p[ii]
+}
+
+for (ii in 1:nrow(commclus3_token)) {
+  idx <- which(commclus3_token$word_stem[ii] == u_words)
+  bag_ow[3,idx] = commclus3_token$p[ii]
+}
+
+for (ii in 1:nrow(commclus4_token)) {
+  idx <- which(commclus4_token$word_stem[ii] == u_words)
+  bag_ow[4,idx] = commclus4_token$p[ii]
+}
+
+for (ii in 1:nrow(commclus5_token)) {
+  idx <- which(commclus5_token$word_stem[ii] == u_words)
+  bag_ow[5,idx] = commclus5_token$p[ii]
+}
+
+for (ii in 1:nrow(commclus6_token)) {
+  idx <- which(commclus6_token$word_stem[ii] == u_words)
+  bag_ow[6,idx] = commclus6_token$p[ii]
+}
+
+for (ii in 1:nrow(commclus7_token)) {
+  idx <- which(commclus7_token$word_stem[ii] == u_words)
+  bag_ow[7,idx] = commclus7_token$p[ii]
+}
+
+for (ii in 1:nrow(commclus8_token)) {
+  idx <- which(commclus8_token$word_stem[ii] == u_words)
+  bag_ow[8,idx] = commclus8_token$p[ii]
+}
+
+for (ii in 1:nrow(commclus9_token)) {
+  idx <- which(commclus9_token$word_stem[ii] == u_words)
+  bag_ow[9,idx] = commclus9_token$p[ii]
+}
+
+for (ii in 1:nrow(commclus10_token)) {
+  idx <- which(commclus10_token$word_stem[ii] == u_words)
+  bag_ow[10,idx] = commclus10_token$p[ii]
+}
+
+
+dist(bag_ow,diag = TRUE) #euclidean
+library(text2vec)
+dist2(as.matrix(bag_ow)) #cosine
+
+#getting the cluster dendrogram!
+x <- dist2(as.matrix(bag_ow))
+attr(x,"Size") <- as.integer(nrow(x))
+clusters <- hclust(as.dist(x))
+plot(clusters)
 
 
 

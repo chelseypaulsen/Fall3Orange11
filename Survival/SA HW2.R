@@ -79,10 +79,13 @@ head(sorted_servo,20)
 bounded_sorted_servo = sorted_servo[which(sorted_servo$hour < 35 & sorted_servo$hour > 26),]
 summary(sorted_servo$hour)
 
-bounded_sorted_sevo = tail(bounded_sorted_servo,20)
+bounded_sorted_servo = tail(bounded_sorted_servo,20)
 
-# How to Fix the 20 pumps? With a servo
+increased_hours = bounded_sorted_servo$hour*1.3852 - bounded_sorted_servo$hour
+mean(increased_hours) #average # of hours increased
+sum(increased_hours) #sum of # of hours increased
 
+# How to Fix the 20 pumps? With a servo!
 summary(fit)
 exp(coef(fit))
 
@@ -96,17 +99,26 @@ summary(fit)$table[,2]
 # (Intercept)      backup bridgecrane       servo   trashrack   elevation       slope         age  Log(scale) 
 # 0.57055346  0.12439606  0.19787896  0.13831128  0.12435523  0.07793087  0.01754107  0.06877616  0.08584394
 
-# Reason 2
-# shape       scale      backup bridgecrane       servo   trashrack   elevation       slope         age 
-# 5.1741457  14.2477735   1.0170329   1.0169381   0.9310780  40.8804719   0.9972662   1.0460434   1.2053073 
 
-# Reason 3
-# shape       scale      backup bridgecrane       servo   trashrack   elevation       slope         age 
-# 3.8992925 436.7472926   1.0590973   0.9401684   0.8714111   0.9366070   1.0269645   0.9914426   0.8026416 
 
-# Reason 4
-# shape       scale      backup bridgecrane       servo   trashrack   elevation       slope         age 
-# 1.8280700   0.0742323   0.8588016   0.8618851   0.7425047   0.6660426   2.3585729   0.8884372   2.3461911 
+###Additional analysis on other reasons besides flooding. 
+
+fit <- survreg(Surv(hour, reason == 4) ~ backup + bridgecrane + servo + trashrack + elevation +
+                 slope + age, data = katrina, dist = "weibull")
+summary(fit)
+exp(coef(fit))
+
+# Reason 2 - use a trashrack
+#(Intercept)      backup bridgecrane       servo   trashrack   elevation       slope         age 
+#14.2477735   1.0170329   1.0169381   0.9310780  40.8803791   0.9972662   1.0460434   1.2053073 
+
+# Reason 3 - use a backup
+#(Intercept)      backup bridgecrane       servo   trashrack   elevation       slope         age 
+#436.7472926   1.0590973   0.9401684   0.8714111   0.9366070   1.0269645   0.9914426   0.8026416 
+
+# Reason 4 - do not upgrade - instead increase elevation
+#(Intercept)      backup bridgecrane       servo   trashrack   elevation       slope         age 
+#0.0742323   0.8588016   0.8618851   0.7425047   0.6660426   2.3585729   0.8884372   2.3461911
 
 # How many of each upgrade?
 sum(katrina$backup == 1)

@@ -103,24 +103,52 @@ ggmap(map, fullpage=TRUE) +
   geom_point(data = clus10, aes(x = lon, y = lat), color = 'pink', size = 2) 
   
 
-# 5.
+# 5. join reviews and listings
+df_listings2 = rename(df_listings2, listing_id = id)
+df_combined = merge(df_reviews, df_listings2, by='listing_id')
+View(df_combined)
 
-
+commclus1 = filter(df_combined, cluster == 1)
+commclus2 = filter(df_combined, cluster == 2)
+commclus3 = filter(df_combined, cluster == 3)
+commclus4 = filter(df_combined, cluster == 4)
+commclus5 = filter(df_combined, cluster == 5)
+commclus6 = filter(df_combined, cluster == 6)
+commclus7 = filter(df_combined, cluster == 7)
+commclus8 = filter(df_combined, cluster == 8)
+commclus9 = filter(df_combined, cluster == 9)
+commclus10 = filter(df_combined, cluster == 10)
 
 # 6. Do sentiment analysis of the location clusters
 
 # Use df_reviews$comments
 # lots of NA
-comments_token    <- df_reviews %>% unnest_tokens(word, comments) %>%
+
+## Do this code for each cluster (all commclus1-10), not the entire dataset
+commclus1_token    <- commclus1 %>% unnest_tokens(word, comments) %>%
   anti_join(stop_words) %>% mutate(word = str_extract(word, "[a-z']+")) %>% 
   mutate(word_stem = wordStem(word, language="english")) %>%
   filter(!is.na(word_stem)) %>%
   count(word_stem, sort = TRUE) %>% mutate(p = n/sum(n)) %>% filter(p >0.001)
-View(comments_token)
+View(commclus1_token)
+
+commclus2_token    <- commclus2 %>% unnest_tokens(word, comments) %>%
+  anti_join(stop_words) %>% mutate(word = str_extract(word, "[a-z']+")) %>% 
+  mutate(word_stem = wordStem(word, language="english")) %>%
+  filter(!is.na(word_stem)) %>%
+  count(word_stem, sort = TRUE) %>% mutate(p = n/sum(n)) %>% filter(p >0.001)
+View(commclus1_token)
+
+commclus3_token    <- commclus3 %>% unnest_tokens(word, comments) %>%
+  anti_join(stop_words) %>% mutate(word = str_extract(word, "[a-z']+")) %>% 
+  mutate(word_stem = wordStem(word, language="english")) %>%
+  filter(!is.na(word_stem)) %>%
+  count(word_stem, sort = TRUE) %>% mutate(p = n/sum(n)) %>% filter(p >0.001)
+View(commclus1_token)
 
 # Make matrix whose columns are the words
 # nrow = number of locations?
-u_words <- sort(unique(comments_token$word_stem))
+u_words <- sort(unique(c(commclus1_token$word_stem,commclus2_token$word_stem,commclus3_token$word_stem)))
 View(u_words)
 bag_ow <- as.data.frame(matrix(0,nrow=10,ncol=length(u_words))) # make a matrix whose colums are the words
 View(bag_ow)
@@ -128,12 +156,15 @@ View(bag_ow)
 # assign data
 names(bag_ow) <- u_words
 
-for (ii in 1:nrow(comments_token)) {
-  idx <- which(comments_token$word_stem[ii] == u_words)
-  bag_ow[1,idx] = comments_token$p[ii]
-}
-
-
+# for (ii in 1:nrow(comments_token)) {
+#   idx <- which(comments_token$word_stem[ii] == u_words)
+#   bag_ow[1,idx] = comments_token$p[ii]
+# }
+# 
+# for (ii in 1:nrow(comments_token)) {
+#   idx <- which(comments_token$word_stem[ii] == u_words)
+#   bag_ow[1,idx] = comments_token$p[ii]
+# }
 
 
 

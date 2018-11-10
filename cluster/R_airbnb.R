@@ -20,18 +20,97 @@ df_reviews = read_csv(file='C:\\Users\\jlmic\\Documents\\Clustering\\Data\\revie
 View(df_calendar)
 View(df_listings)
 View(df_reviews)
+######################################
+# Set up geocode
+######################################
+#install.packages('digest')
+library(devtools)
+#devtools::install_github("dkahle/ggmap", ref = "tidyup", force=TRUE)
+#####################################################
+#TO DO THIS YOU NEED TO REGISTER TO A GOOGLE DEV ACCOUNT
+#AND PROVIDE YOUR OWN API KEY!!!!!
+#THEN YOU CAN GET A PRETTY MAP!
+# https://www.wpgmaps.com/documentation/creating-a-google-maps-api-key/
+# You will also have to get the geocode api enabled
+#####################################################
+library(readr)
+library(lubridate)
+library(ggplot2)
+library(ggmap)
+library(dplyr)
+library(data.table)
+library(ggrepel)
 
+register_google("AIzaSyAU41QgbGF0NnbyAl6F983RVqd4ILj4axU")
 # To-Do- List
-# 1. Identify top ~10 attractions in the Boston area
-# 2. Set k-Means clusters around the ~10 attractions
+
+#### 1. Identify top ~10 attractions in the Boston area
+# Fenway Park (Red Sox)	1	14509	42.346922	-71.097186
+# Freedom Trail 	2	15722	42.367231	-71.058331
+# Museum of Fine Arts Boston	3	7563	42.339635	-71.094037
+# Boston Public Library	4	3592	42.351057	-71.078849
+# Boston Public Garden (Swan Boats)	5	8998	42.354191	-71.070181
+# John F. Kennedy Presidential Library and Museum 	6	3525	42.31652	-71.034215
+# North End	7	6646	42.365216	-71.055109
+# Boston Pops and Boston Symphony Orchestra	8	408	42.343147	-71.085805
+# Sam Adams Brewery	9	2299	42.314895	-71.102847
+# Holocaust Memorial	10	2339	42.36127	-71.057555
+ 
+df_top10 = read_csv(file='C:\\Users\\jlmic\\Documents\\Clustering\\Data\\Top Attractions.csv')
+View(df_top10)
+top10 = df_top10[1:10,4:5]
+dim(top10)
+
+#### 2. Set k-Means clusters around the ~10 attractions
+# df_listings$latitude and df_listings$longitude
+
+df_cluster = select(df_listings, latitude, longitude)
+View(df_cluster)
+View(df_listings)
+
+km_loc = kmeans(df_cluster, centers=top10)
+df_listings$cluster = km_loc$cluster
+
 # 3. Stratify by the location cluster
-# 4. Do sentiment analysis of the location clusters
+df_listings2 = select(df_listings, id, latitude, longitude, cluster)
+df_listings2 <- rename(df_listings2, lat = latitude)
+df_listings2 <- rename(df_listings2, lon = longitude)
 
-# Stratify by location
+clus1 = filter(df_listings2, cluster == 1)
+clus2 = filter(df_listings2, cluster == 2)
+clus3 = filter(df_listings2, cluster == 3)
+clus4 = filter(df_listings2, cluster == 4)
+clus5 = filter(df_listings2, cluster == 5)
+clus6 = filter(df_listings2, cluster == 6)
+clus7 = filter(df_listings2, cluster == 7)
+clus8 = filter(df_listings2, cluster == 8)
+clus9 = filter(df_listings2, cluster == 9)
+clus10 = filter(df_listings2, cluster == 10)
 
+# 4. Assign Map
+map = get_map(location = 'Boston', zoom = 12)
+
+ggmap(map, fullpage=TRUE) +
+  geom_point(data = clus1, aes(x = lon, y = lat), color = 'red', size = 2) +
+  geom_point(data = clus2, aes(x = lon, y = lat), color = 'blue', size = 2) +
+  geom_point(data = clus3, aes(x = lon, y = lat), color = 'green', size = 2) +
+  geom_point(data = clus4, aes(x = lon, y = lat), color = 'yellow', size = 2) +
+  geom_point(data = clus5, aes(x = lon, y = lat), color = 'purple', size = 2) +
+  geom_point(data = clus6, aes(x = lon, y = lat), color = 'brown', size = 2) +
+  geom_point(data = clus7, aes(x = lon, y = lat), color = 'black', size = 2) +
+  geom_point(data = clus8, aes(x = lon, y = lat), color = 'gold', size = 2) +
+  geom_point(data = clus9, aes(x = lon, y = lat), color = 'orange', size = 2) +
+  geom_point(data = clus10, aes(x = lon, y = lat), color = 'pink', size = 2) 
+  
+
+# 5.
+
+
+
+# 6. Do sentiment analysis of the location clusters
 
 # Use df_reviews$comments
-
+# lots of NA
 comments_token    <- df_reviews %>% unnest_tokens(word, comments) %>%
   anti_join(stop_words) %>% mutate(word = str_extract(word, "[a-z']+")) %>% 
   mutate(word_stem = wordStem(word, language="english")) %>%
@@ -43,7 +122,7 @@ View(comments_token)
 # nrow = number of locations?
 u_words <- sort(unique(comments_token$word_stem))
 View(u_words)
-bag_ow <- as.data.frame(matrix(0,nrow=1,ncol=length(u_words))) # make a matrix whose colums are the words
+bag_ow <- as.data.frame(matrix(0,nrow=10,ncol=length(u_words))) # make a matrix whose colums are the words
 View(bag_ow)
 
 # assign data
@@ -53,6 +132,13 @@ for (ii in 1:nrow(comments_token)) {
   idx <- which(comments_token$word_stem[ii] == u_words)
   bag_ow[1,idx] = comments_token$p[ii]
 }
+
+
+
+
+
+
+
 
 View(bag_ow)
 

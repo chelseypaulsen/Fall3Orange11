@@ -11,10 +11,11 @@ library(dplyr)
 library(stringr)
 library(SnowballC)
 library(data.table)
+library(readr)
 # Read in data
-df_calendar = read.csv(file='C:\\Users\\jlmic\\Documents\\Clustering\\Data\\calendar.csv')
-df_listings = read.csv(file='C:\\Users\\jlmic\\Documents\\Clustering\\Data\\listings.csv')
-df_reviews = read.csv(file='C:\\Users\\jlmic\\Documents\\Clustering\\Data\\reviews.csv')
+df_calendar = read_csv(file='C:\\Users\\jlmic\\Documents\\Clustering\\Data\\calendar.csv')
+df_listings = read_csv(file='C:\\Users\\jlmic\\Documents\\Clustering\\Data\\listings.csv')
+df_reviews = read_csv(file='C:\\Users\\jlmic\\Documents\\Clustering\\Data\\reviews.csv')
 
 #df_calendar = read_csv(file='C:\\Users\\chels\\Desktop\\MSA\\Fall 3\\Clustering\\Project 1\\boston-airbnb-open-data\\calendar.csv')
 #df_listings = read_csv(file='C:\\Users\\chels\\Desktop\\MSA\\Fall 3\\Clustering\\Project 1\\boston-airbnb-open-data\\listings.csv')
@@ -104,7 +105,7 @@ register_google("AIzaSyAU41QgbGF0NnbyAl6F983RVqd4ILj4axU")
 # Sam Adams Brewery	9	2299	42.314895	-71.102847
 # Holocaust Memorial	10	2339	42.36127	-71.057555
  
-df_top10 = read.csv(file='C:\\Users\\jlmic\\Documents\\Clustering\\Data\\Top Attractions.csv')
+df_top10 = read_csv(file='C:\\Users\\jlmic\\Documents\\Clustering\\Data\\Top Attractions.csv')
 #df_top10 = read_csv(file='C:\\Users\\chels\\Desktop\\MSA\\Fall 3\\Clustering\\Project 1\\boston-airbnb-open-data\\Top Attractions.csv')
 
 View(df_top10)
@@ -174,7 +175,7 @@ commclus10 = filter(df_combined, cluster == 10)
 # Use df_reviews$comments
 # lots of NA
 
-<<<<<<< HEAD
+
 ## Do this code for each cluster (all commclus1-10), not the entire dataset #### NOT WORKING ###
 commclus1_token    <- commclus1 %>% unnest_tokens(word, comments) %>%
   anti_join(stop_words) %>% mutate(word = str_extract(word, "[a-z']+")) %>% 
@@ -203,12 +204,12 @@ commclus4_token    <- commclus4 %>% unnest_tokens(word, comments) %>%
   filter(!is.na(word_stem)) %>%
   count(word_stem, sort = TRUE) %>% mutate(p = n/sum(n)) %>% filter(p >0.001)
 View(commclus4_token)
-=======
+
 ## Do this code for each cluster (all commclus1-10), not the entire dataset
->>>>>>> 721b5543a0906d5b1406b1ee861f556907f69916
+
 
 all_clust <- rbind(commclus1,commclus2,commclus3,commclus4,commclus5,commclus6,commclus7,commclus8,commclus9,commclus10)
-
+View(all_clust)
 
 commclus_token    <- all_clust %>% group_by(cluster) %>% unnest_tokens(word, comments) %>%
   anti_join(stop_words) %>% mutate(word = str_extract(word, "[a-z']+")) %>% 
@@ -234,6 +235,7 @@ for (j in unique_id){
   k<-k+1
 }
 
+View(bag_ow) # Looks Correct
 
 dist(bag_ow,diag = TRUE) #euclidean
 library(text2vec)
@@ -244,7 +246,6 @@ x <- dist2(as.matrix(bag_ow))
 attr(x,"Size") <- as.integer(nrow(x))
 clusters <- hclust(as.dist(x))
 plot(clusters)
-
 
 View(bag_ow)
 

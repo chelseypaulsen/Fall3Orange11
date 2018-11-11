@@ -82,13 +82,13 @@ def cal_extract(row):
     start = dt.datetime(2016, 9, 6)
     start_str = start.strftime('%Y-%m-%d')
     end = (start + dt.timedelta(days=30)).strftime('%Y-%m-%d')
-    row.booked_rev30 = cal_id[cal_id['date'] < end]['price'].dropna().sum()
+    row['booked_rev30'] = cal_id[cal_id['date'] < end]['price'].dropna().sum()
     end = (dt.datetime(2016, 9, 6) + dt.timedelta(days=60)).strftime('%Y-%m-%d')
-    row.booked_rev60 = cal_id[cal_id['date'] < end]['price'].dropna().sum()
+    row['booked_rev60'] = cal_id[cal_id['date'] < end]['price'].dropna().sum()
     end = (dt.datetime(2016, 9, 6) + dt.timedelta(days=90)).strftime('%Y-%m-%d')
-    row.booked_rev90 = cal_id[cal_id['date'] < end]['price'].dropna().sum()
+    row['booked_rev90'] = cal_id[cal_id['date'] < end]['price'].dropna().sum()
     end = (dt.datetime(2016, 9, 6) + dt.timedelta(days=365)).strftime('%Y-%m-%d')
-    row.booked_rev365 = cal_id[cal_id['date'] < end]['price'].dropna().sum()
+    row['booked_rev365'] = cal_id[cal_id['date'] < end]['price'].dropna().sum()
 
     return row
 
@@ -391,6 +391,17 @@ hm_sent = HeatMap( list(zip(list_clust['latitude'], list_clust['longitude'], lis
                  )
 hmap.add_child(hm_sent)
 hmap.save(os.path.join(os.getcwd(), 'results', 'heatmap_sent.html')) ## This requires a 'results' folder in your directory
+
+# heat of revenue, TODO Drop NAs
+hmap = folium.Map(location=[42.35, -71.06], zoom_start=12, )
+hm_sent = HeatMap( list(zip(list_clust['latitude'], list_clust['longitude'], list_clust['booked_rev_per_bed'])),
+                   min_opacity=0.2,
+                   max_val=list_clust['booked_rev_per_bed'].max(),
+                   radius=17, blur=15,
+                   max_zoom=1,
+                 )
+hmap.add_child(hm_sent)
+hmap.save(os.path.join(os.getcwd(), 'results', 'heatmap_revenue.html')) ## This requires a 'results' folder in your directory
 
 
 # TODO Identify distinguishing features b/w positive and negative reviews

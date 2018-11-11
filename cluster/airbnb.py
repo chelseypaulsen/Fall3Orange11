@@ -5,6 +5,9 @@ pd.set_option('display.max_columns',10)
 import os
 import re
 import numpy as np
+import gmplot
+import pickle as pkl
+import gmaps
 from sklearn.decomposition import pca
 
 os.chdir("C:/Users/Steven/Documents/MSA/Analytics Foundations/Clustering/data/")
@@ -167,12 +170,11 @@ TD_Garden_dist = []
 euc_dist_attraction(TD_Garden_dist, 25)
 listings['TD_Garden_dist'] = pd.Series(TD_Garden_dist, index=listings.index)
 
-# TODO? Visualize on map
 
 ###### SENTIMENT EXTRACTION #######
 import nltk
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
-import pickle as pkl
+
 # from langdetect import detect # encountered "runtime error" with this
 nltk.download('vader_lexicon')
 
@@ -189,7 +191,7 @@ reviews['sentiment'] = reviews['comments'].apply(lambda x: sid.polarity_scores(x
 
 reviews = pd.concat([reviews, reviews['sentiment'].apply(pd.Series)], axis=1)
 reviews = reviews.drop(['sentiment'], axis=1)
-pkl.dump(reviews, open("reviews_pkl", "wb"))
+# pkl.dump(reviews, open("reviews_pkl", "wb"))
 reviews = pkl.load(open( "reviews_pkl", "rb"))
 
 # TODO detect language and remove non-english
@@ -229,9 +231,9 @@ listing_sent = listing_sent[["id count", "compound mean", "compound std"]]
 listings = pd.merge(listings, listing_sent, left_index=True, right_index=True, how='left') #SUCCESS!!!
 
 
-listing5 = listings[listings['id count'] > 5]
+# listing5 = listings[listings['id count'] > 5]
 listing10 = listings[listings['id count'] > 10]
-listing20 = listings[listings['id count'] > 20]
+# listing20 = listings[listings['id count'] > 20]
 plt.scatter(listing10['reviews_per_month'], listing10['compound mean'], s=10, cmap='viridis', alpha=0.1)
 plt.clf()
 
@@ -250,12 +252,26 @@ sent_temp = list_clust[['compound mean', 'compound std']]  # TODO Should we norm
 
 kmeans.fit(sent_temp.dropna())
 y_kmeans = kmeans.predict(sent_temp)
-list_clust.loc[:,['y_kmeans']] = y_kmeans
+#list_clust.loc[:, ['y_kmeans']] = y_kmeans
+list_clust['y_kmeans'] = y_kmeans
+
+# plot of resulting cluster distrubutions
+for cluster in np.unique(y_kmeans):
+    sns.distplot(list_clust[list_clust['y_kmeans'] == cluster]['compound mean'], hist=False, kde=True, label=cluster)
+plt.clf()
+
+# mapping terms based on density plot above
+sent_list = ['very good', 'neutral', 'very bad', 'good', 'bad']
+list_clust['sent_clust'] = list_clust['y_kmeans'].apply(lambda x: sent_list[x])
 
 # Plot showing resulting (from mean sentiment scores and sentiment variability)
 sns.distplot(list_clust['compound mean'])
-plt.scatter(list_clust['compound mean'], list_clust['compound std'], c=list_clust['y_kmeans'], s=20, cmap='viridis', alpha=0.1)
+plt.scatter(list_clust['compound mean'],
+            list_clust['compound std'],
+            c=list_clust['y_kmeans'], s=20, alpha=0.1)
 plt.clf()
+
+
 
 ########## CLUSTERING GEORGAPHY ###########
 dist_cols = [col for col in listings.columns if '_dist' in col]
@@ -264,7 +280,9 @@ resp = ['price', 'review_scores_rating', 'review_scores_location']
 cols = dist_cols + geo_cols + resp
 listings_nhd = listings.groupby(by="neighbourhood_cleansed")[cols].agg('mean')
 
-pkl.dump(listings, open("listing_full", "wb"))
+
+pkl.dump(list_clust, open("listing_clust", "wb"))
+list_clust = pkl.load(open("listing_clust", "rb"))
 
 # sentiment, geographic,
 # Target Matrix: Location Clusters by sentiment clusters, average price * expected bookings for all
@@ -279,11 +297,27 @@ pkl.dump(listings, open("listing_full", "wb"))
 # Build into a listing x keyword matrix
 # compound value from vader
 
-# TODO Sentiment Clustering
-#   Strong negative reviews
-#   Strong positive reviews
-#   Neutral reviews
-# TODO? Visualize on map
+###### VISUALIZING ON MAP ######
+import gmplot
+
+# heatmap input data is (lat, lon, weight), weight is optional.
+gmap = gmplot.GoogleMapPlotter(42.35, -71.06, 12)
+
+# gmap.plot(list_clust['latitude'], list_clust['longitude'])
+# gmap.scatter(more_lats, more_lngs, '#3B0B39', size=40, marker=False)
+gmap.scatter(list_clust['latitude'], list_clust['longitude'], 'k', marker=True)
+gmap.heatmap(list_clust['latitude'], list_clust['longitude'], list(list_clust['price']))
+gmap.draw("airbnb_heatmap.html")
+# TODO Figure out how to apply weights
+
+
+# Did not work
+# import gmaps
+# list_clust['lat_long'] = list(zip(list_clust.latitude, list_clust.longitude))
+# fig = gmaps.figure()
+# fig.add_layer(gmaps.heatmap_layer(list_clust['lat_long']))
+# fig
+
 # TODO Identify distinguishing features b/w positive and negative reviews
 #
 

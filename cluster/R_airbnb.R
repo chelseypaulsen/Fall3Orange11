@@ -5,17 +5,16 @@
 #######################
 
 # low availability, high price, high locating scores
-
 library(gutenbergr)
 library(tidytext)
 library(dplyr)
 library(stringr)
 library(SnowballC)
-
+library(data.table)
 # Read in data
-df_calendar = read_csv(file='C:\\Users\\jlmic\\Documents\\Clustering\\Data\\calendar.csv')
-df_listings = read_csv(file='C:\\Users\\jlmic\\Documents\\Clustering\\Data\\listings.csv')
-df_reviews = read_csv(file='C:\\Users\\jlmic\\Documents\\Clustering\\Data\\reviews.csv')
+df_calendar = read.csv(file='C:\\Users\\jlmic\\Documents\\Clustering\\Data\\calendar.csv')
+df_listings = read.csv(file='C:\\Users\\jlmic\\Documents\\Clustering\\Data\\listings.csv')
+df_reviews = read.csv(file='C:\\Users\\jlmic\\Documents\\Clustering\\Data\\reviews.csv')
 
 #df_calendar = read_csv(file='C:\\Users\\chels\\Desktop\\MSA\\Fall 3\\Clustering\\Project 1\\boston-airbnb-open-data\\calendar.csv')
 #df_listings = read_csv(file='C:\\Users\\chels\\Desktop\\MSA\\Fall 3\\Clustering\\Project 1\\boston-airbnb-open-data\\listings.csv')
@@ -105,7 +104,7 @@ register_google("AIzaSyAU41QgbGF0NnbyAl6F983RVqd4ILj4axU")
 # Sam Adams Brewery	9	2299	42.314895	-71.102847
 # Holocaust Memorial	10	2339	42.36127	-71.057555
  
-df_top10 = read_csv(file='C:\\Users\\jlmic\\Documents\\Clustering\\Data\\Top Attractions.csv')
+df_top10 = read.csv(file='C:\\Users\\jlmic\\Documents\\Clustering\\Data\\Top Attractions.csv')
 #df_top10 = read_csv(file='C:\\Users\\chels\\Desktop\\MSA\\Fall 3\\Clustering\\Project 1\\boston-airbnb-open-data\\Top Attractions.csv')
 
 View(df_top10)
@@ -116,7 +115,7 @@ dim(top10)
 # df_listings$latitude and df_listings$longitude
 
 df_cluster = select(df_listings, latitude, longitude)
-View(df_cluster)
+dim(df_cluster)
 View(df_listings)
 
 km_loc = kmeans(df_cluster, centers=top10)
@@ -175,7 +174,7 @@ commclus10 = filter(df_combined, cluster == 10)
 # Use df_reviews$comments
 # lots of NA
 
-## Do this code for each cluster (all commclus1-10), not the entire dataset
+## Do this code for each cluster (all commclus1-10), not the entire dataset #### NOT WORKING ###
 commclus1_token    <- commclus1 %>% unnest_tokens(word, comments) %>%
   anti_join(stop_words) %>% mutate(word = str_extract(word, "[a-z']+")) %>% 
   mutate(word_stem = wordStem(word, language="english")) %>%
@@ -318,9 +317,6 @@ x <- dist2(as.matrix(bag_ow))
 attr(x,"Size") <- as.integer(nrow(x))
 clusters <- hclust(as.dist(x))
 plot(clusters)
-
-
-
 
 
 View(bag_ow)

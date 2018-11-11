@@ -176,136 +176,32 @@ commclus10 = filter(df_combined, cluster == 10)
 # lots of NA
 
 ## Do this code for each cluster (all commclus1-10), not the entire dataset
-commclus1_token    <- commclus1 %>% unnest_tokens(word, comments) %>%
+
+all_clust <- rbind(commclus1,commclus2,commclus3,commclus4,commclus5,commclus6,commclus7,commclus8,commclus9,commclus10)
+
+
+commclus_token    <- all_clust %>% group_by(cluster) %>% unnest_tokens(word, comments) %>%
   anti_join(stop_words) %>% mutate(word = str_extract(word, "[a-z']+")) %>% 
   mutate(word_stem = wordStem(word, language="english")) %>%
-  filter(!is.na(word_stem)) %>%
+  filter(word_stem!='NA') %>%
   count(word_stem, sort = TRUE) %>% mutate(p = n/sum(n)) %>% filter(p >0.001)
-View(commclus1_token)
 
-commclus2_token    <- commclus2 %>% unnest_tokens(word, comments) %>%
-  anti_join(stop_words) %>% mutate(word = str_extract(word, "[a-z']+")) %>% 
-  mutate(word_stem = wordStem(word, language="english")) %>%
-  filter(!is.na(word_stem)) %>%
-  count(word_stem, sort = TRUE) %>% mutate(p = n/sum(n)) %>% filter(p >0.001)
-View(commclus2_token)
+u_words <- sort(unique(commclus_token$word_stem))
 
-commclus3_token    <- commclus3 %>% unnest_tokens(word, comments) %>%
-  anti_join(stop_words) %>% mutate(word = str_extract(word, "[a-z']+")) %>% 
-  mutate(word_stem = wordStem(word, language="english")) %>%
-  filter(!is.na(word_stem)) %>%
-  count(word_stem, sort = TRUE) %>% mutate(p = n/sum(n)) %>% filter(p >0.001)
-View(commclus3_token)
-
-commclus4_token    <- commclus4 %>% unnest_tokens(word, comments) %>%
-  anti_join(stop_words) %>% mutate(word = str_extract(word, "[a-z']+")) %>% 
-  mutate(word_stem = wordStem(word, language="english")) %>%
-  filter(!is.na(word_stem)) %>%
-  count(word_stem, sort = TRUE) %>% mutate(p = n/sum(n)) %>% filter(p >0.001)
-View(commclus4_token)
-
-commclus5_token    <- commclus5 %>% unnest_tokens(word, comments) %>%
-  anti_join(stop_words) %>% mutate(word = str_extract(word, "[a-z']+")) %>% 
-  mutate(word_stem = wordStem(word, language="english")) %>%
-  filter(!is.na(word_stem)) %>%
-  count(word_stem, sort = TRUE) %>% mutate(p = n/sum(n)) %>% filter(p >0.001)
-View(commclus5_token)
-
-commclus6_token    <- commclus6 %>% unnest_tokens(word, comments) %>%
-  anti_join(stop_words) %>% mutate(word = str_extract(word, "[a-z']+")) %>% 
-  mutate(word_stem = wordStem(word, language="english")) %>%
-  filter(!is.na(word_stem)) %>%
-  count(word_stem, sort = TRUE) %>% mutate(p = n/sum(n)) %>% filter(p >0.001)
-View(commclus6_token)
-
-commclus7_token    <- commclus7 %>% unnest_tokens(word, comments) %>%
-  anti_join(stop_words) %>% mutate(word = str_extract(word, "[a-z']+")) %>% 
-  mutate(word_stem = wordStem(word, language="english")) %>%
-  filter(!is.na(word_stem)) %>%
-  count(word_stem, sort = TRUE) %>% mutate(p = n/sum(n)) %>% filter(p >0.001)
-View(commclus7_token)
-
-commclus8_token    <- commclus8 %>% unnest_tokens(word, comments) %>%
-  anti_join(stop_words) %>% mutate(word = str_extract(word, "[a-z']+")) %>% 
-  mutate(word_stem = wordStem(word, language="english")) %>%
-  filter(!is.na(word_stem)) %>%
-  count(word_stem, sort = TRUE) %>% mutate(p = n/sum(n)) %>% filter(p >0.001)
-View(commclus8_token)
-
-commclus9_token    <- commclus9 %>% unnest_tokens(word, comments) %>%
-  anti_join(stop_words) %>% mutate(word = str_extract(word, "[a-z']+")) %>% 
-  mutate(word_stem = wordStem(word, language="english")) %>%
-  filter(!is.na(word_stem)) %>%
-  count(word_stem, sort = TRUE) %>% mutate(p = n/sum(n)) %>% filter(p >0.001)
-View(commclus9_token)
-
-commclus10_token    <- commclus10 %>% unnest_tokens(word, comments) %>%
-  anti_join(stop_words) %>% mutate(word = str_extract(word, "[a-z']+")) %>% 
-  mutate(word_stem = wordStem(word, language="english")) %>%
-  filter(!is.na(word_stem)) %>%
-  count(word_stem, sort = TRUE) %>% mutate(p = n/sum(n)) %>% filter(p >0.001)
-View(commclus10_token)
-
-# Make matrix whose columns are the words
-# nrow = number of locations?
-u_words <- sort(unique(c(commclus1_token$word_stem,commclus2_token$word_stem,commclus3_token$word_stem,commclus4_token$word_stem,
-                         commclus5_token$word_stem,commclus6_token$word_stem,commclus7_token$word_stem,commclus8_token$word_stem,
-                         commclus9_token$word_stem,commclus10_token$word_stem)))
-View(u_words)
 bag_ow <- as.data.frame(matrix(0,nrow=10,ncol=length(u_words))) # make a matrix whose colums are the words
-View(bag_ow)
-
-# assign data
+# and each row is a state of the union address
 names(bag_ow) <- u_words
 
-for (ii in 1:nrow(commclus1_token)) {
-  idx <- which(commclus1_token$word_stem[ii] == u_words)
-  bag_ow[1,idx] = commclus1_token$p[ii]
-}
+unique_id = sort(unique(commclus_token$cluster))
+k=1
 
-for (ii in 1:nrow(commclus2_token)) {
-  idx <- which(commclus2_token$word_stem[ii] == u_words)
-  bag_ow[2,idx] = commclus2_token$p[ii]
-}
-
-for (ii in 1:nrow(commclus3_token)) {
-  idx <- which(commclus3_token$word_stem[ii] == u_words)
-  bag_ow[3,idx] = commclus3_token$p[ii]
-}
-
-for (ii in 1:nrow(commclus4_token)) {
-  idx <- which(commclus4_token$word_stem[ii] == u_words)
-  bag_ow[4,idx] = commclus4_token$p[ii]
-}
-
-for (ii in 1:nrow(commclus5_token)) {
-  idx <- which(commclus5_token$word_stem[ii] == u_words)
-  bag_ow[5,idx] = commclus5_token$p[ii]
-}
-
-for (ii in 1:nrow(commclus6_token)) {
-  idx <- which(commclus6_token$word_stem[ii] == u_words)
-  bag_ow[6,idx] = commclus6_token$p[ii]
-}
-
-for (ii in 1:nrow(commclus7_token)) {
-  idx <- which(commclus7_token$word_stem[ii] == u_words)
-  bag_ow[7,idx] = commclus7_token$p[ii]
-}
-
-for (ii in 1:nrow(commclus8_token)) {
-  idx <- which(commclus8_token$word_stem[ii] == u_words)
-  bag_ow[8,idx] = commclus8_token$p[ii]
-}
-
-for (ii in 1:nrow(commclus9_token)) {
-  idx <- which(commclus9_token$word_stem[ii] == u_words)
-  bag_ow[9,idx] = commclus9_token$p[ii]
-}
-
-for (ii in 1:nrow(commclus10_token)) {
-  idx <- which(commclus10_token$word_stem[ii] == u_words)
-  bag_ow[10,idx] = commclus10_token$p[ii]
+for (j in unique_id){
+  temp <- commclus_token %>%filter(cluster == j)
+  for (ii in 1:nrow(temp)) {
+    idx <- which(temp$word_stem[ii] == u_words)
+    bag_ow[k,idx] = temp$p[ii]
+  }
+  k<-k+1
 }
 
 

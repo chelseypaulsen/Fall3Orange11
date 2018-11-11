@@ -1,7 +1,6 @@
 import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
-pd.set_option('display.max_columns',10)
 import os
 import re
 import numpy as np
@@ -10,6 +9,7 @@ import pickle as pkl
 import gmaps
 from sklearn.decomposition import pca
 
+pd.set_option('display.max_columns', 10)
 os.chdir("C:/Users/Steven/Documents/MSA/Analytics Foundations/Clustering/data/")
 # os.chdir("C:/Users/derri/Documents/NC State Classes/Clustering/Clustering/boston-airbnb-open-data")
 # os.chdir("C:/Users/Jacobs's folder path")
@@ -26,7 +26,6 @@ attractions = pd.read_excel('Top Attractions.xlsx')
 calendar['date'] = pd.to_datetime(calendar['date'])
 calendar['price'] = calendar['price'].replace('[\$,]', '', regex=True).astype(float)
 calendar['available'] = calendar['available'].astype('category')
-
 
 # then pivoting values for listing_ids as columns
 # could alternative rotate for listing_ids as rows
@@ -191,8 +190,10 @@ reviews['sentiment'] = reviews['comments'].apply(lambda x: sid.polarity_scores(x
 
 reviews = pd.concat([reviews, reviews['sentiment'].apply(pd.Series)], axis=1)
 reviews = reviews.drop(['sentiment'], axis=1)
-# pkl.dump(reviews, open("reviews_pkl", "wb"))
-reviews = pkl.load(open( "reviews_pkl", "rb"))
+
+
+# pkl.dump(reviews, open(os.path.join('pickles','reviews_pkl'), "wb")
+# reviews = pkl.load(open( "reviews_pkl", "rb"))
 
 # TODO detect language and remove non-english
 # reviews['lang'] = reviews['comments'].apply(lambda x: detect(x)) This didn't work: RunTimeError
@@ -237,11 +238,54 @@ listing10 = listings[listings['id count'] > 10]
 plt.scatter(listing10['reviews_per_month'], listing10['compound mean'], s=10, cmap='viridis', alpha=0.1)
 plt.clf()
 
+# selection of final df for clustering
+list_final = listing10
+
+
+######## EXTRACT CALENDAR INFO ##########
+import datetime as dt
+
+
+def cal_extract(row):
+    """ input: single row of listing df
+        returns: single row of listing df, with new columns of data summarized from calendar
+
+    """
+    id = row.name
+    cal_id = calendar[calendar['listing_id'] == id]
+    days_listed = cal_id['available'].count()
+    days_booked = cal_id[cal_id['available']=="t"]['available'].count()
+    booked_rev = cal_id['price'].dropna().sum()
+    cal_price_std = cal_id['price'].dropna().std()
+    cal_price_mean = cal_id['price'].dropna().mean()
+
+    row['booked_rev'] = booked_rev
+    row['booked_rev_per_bed'] = booked_rev/row['beds']
+    row['avail_perc'] = (days_listed-days_booked)/days_listed
+    row['cal_price_std'] = cal_price_std
+    row['cal_price_mean'] = cal_price_mean
+
+    # Calculating revenue over 30,60,90, & 365 day time periods
+    start = dt.datetime(2016, 9, 6)
+    start_str = start.strftime('%Y-%m-%d')
+    end = (start + dt.timedelta(days=30)).strftime('%Y-%m-%d')
+    row.booked_rev30 = cal_id[cal_id['date'] < end]['price'].dropna().sum()
+    end = (dt.datetime(2016, 9, 6) + dt.timedelta(days=60)).strftime('%Y-%m-%d')
+    row.booked_rev60 = cal_id[cal_id['date'] < end]['price'].dropna().sum()
+    end = (dt.datetime(2016, 9, 6) + dt.timedelta(days=90)).strftime('%Y-%m-%d')
+    row.booked_rev90 = cal_id[cal_id['date'] < end]['price'].dropna().sum()
+    end = (dt.datetime(2016, 9, 6) + dt.timedelta(days=365)).strftime('%Y-%m-%d')
+    row.booked_rev365 = cal_id[cal_id['date'] < end]['price'].dropna().sum()
+
+    return row
+
+
+list_final = list_final.apply(cal_extract, axis=1)
+
+
 
 ########## CLUSTERING ###########
-# selection of final df for clustering
-
-list_clust = listing10
+list_clust = list_final
 
 ########## CLUSTERING SENTIMENT ###########
 from sklearn.cluster import KMeans
@@ -260,7 +304,7 @@ for cluster in np.unique(y_kmeans):
     sns.distplot(list_clust[list_clust['y_kmeans'] == cluster]['compound mean'], hist=False, kde=True, label=cluster)
 plt.clf()
 
-# mapping terms based on density plot above
+# list ordering terms based on density plot above
 sent_list = ['very good', 'neutral', 'very bad', 'good', 'bad']
 list_clust['sent_clust'] = list_clust['y_kmeans'].apply(lambda x: sent_list[x])
 
@@ -271,6 +315,17 @@ plt.scatter(list_clust['compound mean'],
             c=list_clust['y_kmeans'], s=20, alpha=0.1)
 plt.clf()
 
+# looping through for better legend
+for cluster in np.unique(list_clust['sent_clust']):
+    xs = list_clust[list_clust['sent_clust'] == cluster]['compound mean']
+    ys = list_clust[list_clust['sent_clust'] == cluster]['compound std']
+    plt.scatter(xs, ys, s=20, alpha=0.1, label=cluster)
+leg= plt.legend()
+for lh in leg.legendHandles:
+    lh.set_alpha(.7)
+
+plt.clf()
+list_clust['sent_clust'].value_counts()
 
 
 ########## CLUSTERING GEORGAPHY ###########
@@ -281,7 +336,7 @@ cols = dist_cols + geo_cols + resp
 listings_nhd = listings.groupby(by="neighbourhood_cleansed")[cols].agg('mean')
 
 
-pkl.dump(list_clust, open("listing_clust", "wb"))
+pkl.dump(list_clust, open(os.path.join('pickles', 'listing_clust'), "wb"))
 list_clust = pkl.load(open("listing_clust", "rb"))
 
 # sentiment, geographic,
@@ -298,11 +353,20 @@ list_clust = pkl.load(open("listing_clust", "rb"))
 # compound value from vader
 
 ###### VISUALIZING ON MAP ######
-import gmplot
+# import gmaps
+# import gmplot
+import folium
+from folium.plugins import HeatMap
 
+# Trying gmaps. Did not work. Couldn't plot final figure?
+# list_clust['lat_long'] = list(zip(list_clust.latitude, list_clust.longitude))
+# fig = gmaps.figure()
+# fig.add_layer(gmaps.heatmap_layer(list_clust['lat_long']))
+# fig
+
+# Trying gmplot
 # heatmap input data is (lat, lon, weight), weight is optional.
 gmap = gmplot.GoogleMapPlotter(42.35, -71.06, 12)
-
 # gmap.plot(list_clust['latitude'], list_clust['longitude'])
 # gmap.scatter(more_lats, more_lngs, '#3B0B39', size=40, marker=False)
 gmap.scatter(list_clust['latitude'], list_clust['longitude'], 'k', marker=True)
@@ -310,13 +374,19 @@ gmap.heatmap(list_clust['latitude'], list_clust['longitude'], list(list_clust['p
 gmap.draw("airbnb_heatmap.html")
 # TODO Figure out how to apply weights
 
+# Trying w/ folium
+# used https://alcidanalytics.com/p/geographic-heatmap-in-python as guide
+hmap = folium.Map(location=[42.35, -71.06], zoom_start=12, )
+hm_price = HeatMap( list(zip(list_clust['latitude'], list_clust['longitude'], list_clust['price'])),
+                   min_opacity=0.2,
+                   max_val=list_clust['price'].max(),
+                   radius=17, blur=15,
+                   max_zoom=1,
+                 )
+hmap.add_child(hm_price)
+hmap.save(os.path.join(os.getcwd(), 'results', 'heatmap_price.html')) ## This requires a 'results' folder in your directory
 
-# Did not work
-# import gmaps
-# list_clust['lat_long'] = list(zip(list_clust.latitude, list_clust.longitude))
-# fig = gmaps.figure()
-# fig.add_layer(gmaps.heatmap_layer(list_clust['lat_long']))
-# fig
+
 
 # TODO Identify distinguishing features b/w positive and negative reviews
 #

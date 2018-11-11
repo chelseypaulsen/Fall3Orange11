@@ -6,14 +6,14 @@ import re
 import numpy as np
 import gmplot
 import pickle as pkl
+import datetime as dt
+
 import gmaps
 from sklearn.decomposition import pca
 
 pd.set_option('display.max_columns', 10)
 os.chdir("C:/Users/Steven/Documents/MSA/Analytics Foundations/Clustering/data/")
 # os.chdir("C:/Users/derri/Documents/NC State Classes/Clustering/Clustering/boston-airbnb-open-data")
-# os.chdir("C:/Users/Jacobs's folder path")
-# os.chdir("C:/Users/Chelsey's folder path")
 
 # import these sexy files
 listings = pd.read_csv('listings.csv')
@@ -21,40 +21,107 @@ calendar = pd.read_csv('calendar.csv')
 reviews = pd.read_csv('reviews.csv')
 attractions = pd.read_excel('Top Attractions.xlsx')
 
-###### INITIAL GLANCES AT DATA #######
-# cleaning up formats of calendar columns,
-calendar['date'] = pd.to_datetime(calendar['date'])
-calendar['price'] = calendar['price'].replace('[\$,]', '', regex=True).astype(float)
-calendar['available'] = calendar['available'].astype('category')
+def initial_cleaning(cal, listings, revs):
+    """
+    INITIAL GLANCES/CLEANING OF DATA
+    :param cal: df of calendar provided
+    :param listings: df of listings provided
+    :param revs: df of reviews provided. Currently not used
+    :return: cal and listings as dfs after being cleaned
+    """
 
-# then pivoting values for listing_ids as columns
-# could alternative rotate for listing_ids as rows
-calendar_p = calendar.pivot_table(index='date', columns='listing_id', values='price', aggfunc='mean')
+    # cleaning up formats of calendar columns,
+    cal['date'] = pd.to_datetime(cal['date'])
+    cal['price'] = cal['price'].replace('[\$,]', '', regex=True).astype(float)
+    cal['available'] = cal['available'].astype('category')
 
-# note strong disagreement on b/w these two columns
-listings[['neighbourhood', 'neighbourhood_cleansed']].tail(20)
+    # then pivoting values for listing_ids as columns
+    # could alternatively rotate for listing_ids as rows
+    calendar_p = cal.pivot_table(index='date', columns='listing_id', values='price', aggfunc='mean')
 
-listings.info()
-listings['price'] = listings['price'].replace('[\$,]', '', regex=True).astype(float)
-listings = listings.set_index('id')
+    # note strong disagreement on b/w these two columns
+    listings[['neighbourhood', 'neighbourhood_cleansed']].tail(20)
+    listings.info()
+    listings['price'] = listings['price'].replace('[\$,]', '', regex=True).astype(float)
+    listings = listings.set_index('id')
+
+    revs.shape[0] == reviews.id.unique().shape[0]  # confirming this id column is unique to each ID
+    revs.shape[0] - reviews.comments.count()  # 53 NaN reviews, which are replaced with '' later in sentiment extraction
+
+    # TODO detect language and remove non-english
+    # from langdetect import detect # encountered "runtime error" with this
+    # reviews['lang'] = reviews['comments'].apply(lambda x: detect(x)) This didn't work: RunTimeError
+
+    # TODO remove ("automatically generated" reviews)
+
+    return cal, listings
+
+def cal_extract(row):
+    """ EXTRACT CALENDAR INFO
+    Call with `listing = listing.apply(cal_extract, axis=1)`
+    :param row: single row of cleaned listing df (as series?)
+            Also relies on global use of calendar
+    :return: single row of listing df, with new columns of data summarized from calendar
+
+    """
+    id = row.name
+    cal_id = calendar[calendar['listing_id'] == id]
+    days_listed = cal_id['available'].count()
+    days_booked = cal_id[cal_id['available'] == "t"]['available'].count()
+    booked_rev = cal_id['price'].dropna().sum()
+    cal_price_std = cal_id['price'].dropna().std()
+    cal_price_mean = cal_id['price'].dropna().mean()
+
+    row['booked_rev'] = booked_rev
+    row['booked_rev_per_bed'] = booked_rev / row['beds']
+    row['avail_perc'] = (days_listed - days_booked) / days_listed
+    row['cal_price_std'] = cal_price_std
+    row['cal_price_mean'] = cal_price_mean
+
+    # Calculating revenue over 30,60,90, & 365 day time periods
+    start = dt.datetime(2016, 9, 6)
+    start_str = start.strftime('%Y-%m-%d')
+    end = (start + dt.timedelta(days=30)).strftime('%Y-%m-%d')
+    row.booked_rev30 = cal_id[cal_id['date'] < end]['price'].dropna().sum()
+    end = (dt.datetime(2016, 9, 6) + dt.timedelta(days=60)).strftime('%Y-%m-%d')
+    row.booked_rev60 = cal_id[cal_id['date'] < end]['price'].dropna().sum()
+    end = (dt.datetime(2016, 9, 6) + dt.timedelta(days=90)).strftime('%Y-%m-%d')
+    row.booked_rev90 = cal_id[cal_id['date'] < end]['price'].dropna().sum()
+    end = (dt.datetime(2016, 9, 6) + dt.timedelta(days=365)).strftime('%Y-%m-%d')
+    row.booked_rev365 = cal_id[cal_id['date'] < end]['price'].dropna().sum()
+
+    return row
+
+
+calendar, listings = initial_cleaning(calendar, listings, reviews)
+print("Cleaning complete. \n")
+listings = listings.apply(cal_extract, axis=1)
+print("Calendar summarized into listings. \n")
+
+# pkl.dump(listings, open(os.path.join('pickles', 'listings_cal'), "wb"))
+# list_clust = pkl.load(open(os.path.join('pickles', 'listings_cal'), "rb"))
+
 
 ###### ATTRACTION PROXIMITY #######
 # Convert the Pandas series of Lat and Long to Floats so we can do math on them
 ##DataCleaning
-lat_listing = np.array(pd.to_numeric(listings['latitude'], downcast='float'))
-long_listing = np.array(pd.to_numeric(listings['longitude'], downcast='float'))
-lat_attract = np.array(pd.to_numeric(attractions['Latitude'], downcast='float'))
-long_attract = np.array(pd.to_numeric(attractions['Longitude'], downcast='float'))
+def latlong_test():
+    lat_listing = np.array(pd.to_numeric(listings['latitude'], downcast='float'))
+    long_listing = np.array(pd.to_numeric(listings['longitude'], downcast='float'))
+    lat_attract = np.array(pd.to_numeric(attractions['Latitude'], downcast='float'))
+    long_attract = np.array(pd.to_numeric(attractions['Longitude'], downcast='float'))
 
-# Test on the first listing in the data set
-# I want to compare this value to the value i get after I right the loop
-a = np.array((42.2826, -71.1331))
-b = np.array((42.3469, -71.0972))
-dist = np.linalg.norm(a - b)
-# Checked the answer in excel and it is right
+    # Test on the first listing in the data set
+    # I want to compare this value to the value i get after I right the loop
+    a = np.array((42.2826, -71.1331))
+    b = np.array((42.3469, -71.0972))
+    dist = np.linalg.norm(a - b)
+    # Checked the answer in excel and it is right
 
-# Attempts at calculating euclidean distance of each listing to each attraction
+
+
 def euc_dist_attraction(name, attract_number):
+    # Attempts at calculating euclidean distance of each listing to each attraction
     a = np.array((attractions.iloc[attract_number]['Latitude'], attractions.iloc[attract_number]['Longitude']))
     for j in range(0, len(listings)):
         b = np.array((listings.iloc[j]['latitude'], listings.iloc[j]['longitude']))
@@ -170,67 +237,55 @@ euc_dist_attraction(TD_Garden_dist, 25)
 listings['TD_Garden_dist'] = pd.Series(TD_Garden_dist, index=listings.index)
 
 
+print("Calculated distances of listings to attractions. \n")
+
+pkl.dump(listings, open(os.path.join('pickles', 'listings_dist'), "wb"))
+# listings = pkl.load(open(os.path.join('pickles', 'listings_dist'), "rb"))
+
+
 ###### SENTIMENT EXTRACTION #######
 import nltk
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
-
-# from langdetect import detect # encountered "runtime error" with this
 nltk.download('vader_lexicon')
 
-sid = SentimentIntensityAnalyzer()
 
-reviews.head()
-reviews.shape[0] == reviews.id.unique().shape[0]  #confirming this id column is unique to each ID
-reviews.shape[0] - reviews.comments.count() # 53 blank/NaN reviews
-reviews['comments'] = reviews['comments'].fillna('')
-reviews.shape[0] - reviews.comments.count() # No more blanks
+def sentiment_extr(revs):
+    sid = SentimentIntensityAnalyzer()
+    revs['comments'] = revs['comments'].fillna('')
+    revs.shape[0] - revs.comments.count()  # No more blanks, which create problems for polarity scores
 
-reviews['sentiment'] = reviews['comments'].apply(lambda x: sid.polarity_scores(x))
-# TODO Alternate sentiment extraction method for each word, possibly textblob?
+    # Calc sentiment and reposition results for cleaner df
+    revs['sentiment'] = revs['comments'].apply(lambda x: sid.polarity_scores(x))
+    revs = pd.concat([revs, revs['sentiment'].apply(pd.Series)], axis=1)
+    revs = revs.drop(['sentiment'], axis=1)
 
-reviews = pd.concat([reviews, reviews['sentiment'].apply(pd.Series)], axis=1)
-reviews = reviews.drop(['sentiment'], axis=1)
+    # TODO Alternate sentiment extraction method for each word, possibly textblob?
+
+    # TODO Find unique words from each sentiment group
+
+    revs[revs['compound'] == 0]  # whats in those neutral reviews
+    reviews_informative = revs[revs['compound'] != 0] # Assume all exact zero reviews are uninformative
+    reviews_informative = reviews_informative.drop(columns=['comments'])
+
+    # Plot this sentiment distribution
+    sns.distplot(reviews_informative['compound'])  # looks GREAT! well... at least not weird
+
+    return reviews_informative
 
 
-# pkl.dump(reviews, open(os.path.join('pickles','reviews_pkl'), "wb")
-# reviews = pkl.load(open( "reviews_pkl", "rb"))
+reviews = sentiment_extr(reviews)
+print("Sentiments calculated for each review. \n")
 
-# TODO detect language and remove non-english
-# reviews['lang'] = reviews['comments'].apply(lambda x: detect(x)) This didn't work: RunTimeError
-
-# TODO remove ("automatically generated" reviews)
-# TODO Unique words from each sentiment group
-
-# normalizing the resulting compound sentiment
-reviews['compound_norm'] = (reviews['compound']-reviews['compound'].mean())/reviews['compound'].std()
-reviews['compound'].std()
-sns.distplot(reviews['compound'])
-sns.distplot(reviews['compound_norm'])  #results are weird, probably shouldn't use
-plt.clf()
-
-# Plot this sentiment distribution
-cond1 = reviews['compound_norm'] > -2.45
-cond2 = reviews['compound_norm'] < -2.3
-temp = reviews[cond1 & cond2]
-temp2 = reviews[reviews['compound'] == 0]  # whats in those neutral reviews
-temp3 = reviews[reviews['compound_norm'] < -.9]
-del(cond1, cond2, temp, temp2, temp3)
-plt.clf()
-
-# Assume all exact zero reviews are uninformative
-reviews_informative = reviews[reviews['compound'] != 0]
-reviews_informative = reviews_informative.drop(columns=['comments'])
-sns.distplot(reviews_informative['compound'])  # looks GREAT! well... at least not weird
+pkl.dump(reviews, open(os.path.join('pickles', 'reviews_sent'), "wb"))
+# reviews = pkl.load(open(os.path.join('pickles', 'reviews_sent'), "rb"))
 
 # aggregating by listing and then flattening the resulting multi-index
 listing_sent = reviews.groupby(by="listing_id").agg(['mean', 'count', 'std'])
 listing_sent.columns = [' '.join(col).strip() for col in listing_sent.columns.values]
 listing_sent = listing_sent[["id count", "compound mean", "compound std"]]
-# listing_sent = listing_sent[listing_sent['id count']>4]
 
-# merging and outputting as pickle
+# merging
 listings = pd.merge(listings, listing_sent, left_index=True, right_index=True, how='left') #SUCCESS!!!
-
 
 # listing5 = listings[listings['id count'] > 5]
 listing10 = listings[listings['id count'] > 10]
@@ -238,54 +293,7 @@ listing10 = listings[listings['id count'] > 10]
 plt.scatter(listing10['reviews_per_month'], listing10['compound mean'], s=10, cmap='viridis', alpha=0.1)
 plt.clf()
 
-# selection of final df for clustering
-list_final = listing10
-
-
-######## EXTRACT CALENDAR INFO ##########
-import datetime as dt
-
-
-def cal_extract(row):
-    """ input: single row of listing df
-        returns: single row of listing df, with new columns of data summarized from calendar
-
-    """
-    id = row.name
-    cal_id = calendar[calendar['listing_id'] == id]
-    days_listed = cal_id['available'].count()
-    days_booked = cal_id[cal_id['available']=="t"]['available'].count()
-    booked_rev = cal_id['price'].dropna().sum()
-    cal_price_std = cal_id['price'].dropna().std()
-    cal_price_mean = cal_id['price'].dropna().mean()
-
-    row['booked_rev'] = booked_rev
-    row['booked_rev_per_bed'] = booked_rev/row['beds']
-    row['avail_perc'] = (days_listed-days_booked)/days_listed
-    row['cal_price_std'] = cal_price_std
-    row['cal_price_mean'] = cal_price_mean
-
-    # Calculating revenue over 30,60,90, & 365 day time periods
-    start = dt.datetime(2016, 9, 6)
-    start_str = start.strftime('%Y-%m-%d')
-    end = (start + dt.timedelta(days=30)).strftime('%Y-%m-%d')
-    row.booked_rev30 = cal_id[cal_id['date'] < end]['price'].dropna().sum()
-    end = (dt.datetime(2016, 9, 6) + dt.timedelta(days=60)).strftime('%Y-%m-%d')
-    row.booked_rev60 = cal_id[cal_id['date'] < end]['price'].dropna().sum()
-    end = (dt.datetime(2016, 9, 6) + dt.timedelta(days=90)).strftime('%Y-%m-%d')
-    row.booked_rev90 = cal_id[cal_id['date'] < end]['price'].dropna().sum()
-    end = (dt.datetime(2016, 9, 6) + dt.timedelta(days=365)).strftime('%Y-%m-%d')
-    row.booked_rev365 = cal_id[cal_id['date'] < end]['price'].dropna().sum()
-
-    return row
-
-
-list_final = list_final.apply(cal_extract, axis=1)
-
-
-
-########## CLUSTERING ###########
-list_clust = list_final
+list_clust = listing10 # selection of prepared df for clustering
 
 ########## CLUSTERING SENTIMENT ###########
 from sklearn.cluster import KMeans
@@ -320,13 +328,15 @@ for cluster in np.unique(list_clust['sent_clust']):
     xs = list_clust[list_clust['sent_clust'] == cluster]['compound mean']
     ys = list_clust[list_clust['sent_clust'] == cluster]['compound std']
     plt.scatter(xs, ys, s=20, alpha=0.1, label=cluster)
-leg= plt.legend()
+leg = plt.legend()
 for lh in leg.legendHandles:
     lh.set_alpha(.7)
-
 plt.clf()
+
 list_clust['sent_clust'].value_counts()
 
+pkl.dump(list_clust, open(os.path.join('pickles', 'list_sent_clust'), "wb"))
+# list_clust = pkl.load(open(os.path.join('pickles', 'list_sent_clust'), "rb"))
 
 ########## CLUSTERING GEORGAPHY ###########
 dist_cols = [col for col in listings.columns if '_dist' in col]
@@ -353,29 +363,12 @@ list_clust = pkl.load(open("listing_clust", "rb"))
 # compound value from vader
 
 ###### VISUALIZING ON MAP ######
-# import gmaps
-# import gmplot
+
 import folium
 from folium.plugins import HeatMap
-
-# Trying gmaps. Did not work. Couldn't plot final figure?
-# list_clust['lat_long'] = list(zip(list_clust.latitude, list_clust.longitude))
-# fig = gmaps.figure()
-# fig.add_layer(gmaps.heatmap_layer(list_clust['lat_long']))
-# fig
-
-# Trying gmplot
-# heatmap input data is (lat, lon, weight), weight is optional.
-gmap = gmplot.GoogleMapPlotter(42.35, -71.06, 12)
-# gmap.plot(list_clust['latitude'], list_clust['longitude'])
-# gmap.scatter(more_lats, more_lngs, '#3B0B39', size=40, marker=False)
-gmap.scatter(list_clust['latitude'], list_clust['longitude'], 'k', marker=True)
-gmap.heatmap(list_clust['latitude'], list_clust['longitude'], list(list_clust['price']))
-gmap.draw("airbnb_heatmap.html")
-# TODO Figure out how to apply weights
-
-# Trying w/ folium
 # used https://alcidanalytics.com/p/geographic-heatmap-in-python as guide
+
+# Plotting price heat map
 hmap = folium.Map(location=[42.35, -71.06], zoom_start=12, )
 hm_price = HeatMap( list(zip(list_clust['latitude'], list_clust['longitude'], list_clust['price'])),
                    min_opacity=0.2,
@@ -386,6 +379,18 @@ hm_price = HeatMap( list(zip(list_clust['latitude'], list_clust['longitude'], li
 hmap.add_child(hm_price)
 hmap.save(os.path.join(os.getcwd(), 'results', 'heatmap_price.html')) ## This requires a 'results' folder in your directory
 
+# Plotting sentiment heat map
+# normalized sentiment... if we're not comfortable defining clusters with this, probably shouldn't use it here... But oh well
+list_clust['compound norm'] = (list_clust['compound mean'] - list_clust['compound mean'].mean())/list_clust['compound mean'].std()
+hmap = folium.Map(location=[42.35, -71.06], zoom_start=12, )
+hm_sent = HeatMap( list(zip(list_clust['latitude'], list_clust['longitude'], list_clust['compound norm'])),
+                   min_opacity=0.2,
+                   max_val=list_clust['compound norm'].max(),
+                   radius=17, blur=15,
+                   max_zoom=1,
+                 )
+hmap.add_child(hm_sent)
+hmap.save(os.path.join(os.getcwd(), 'results', 'heatmap_sent.html')) ## This requires a 'results' folder in your directory
 
 
 # TODO Identify distinguishing features b/w positive and negative reviews

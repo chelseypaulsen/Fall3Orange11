@@ -213,7 +213,7 @@ cond2 = reviews['compound_norm'] < -2.3
 temp = reviews[cond1 & cond2]
 temp2 = reviews[reviews['compound'] == 0]  # whats in those neutral reviews
 temp3 = reviews[reviews['compound_norm'] < -.9]
-del(con1, cond2, temp1, temp2, temp3)
+del(cond1, cond2, temp, temp2, temp3)
 plt.clf()
 
 # Assume all exact zero reviews are uninformative

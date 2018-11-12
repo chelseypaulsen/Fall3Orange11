@@ -245,7 +245,9 @@ dist2(as.matrix(bag_ow)) #cosine
 x <- dist2(as.matrix(bag_ow))
 attr(x,"Size") <- as.integer(nrow(x))
 clusters <- hclust(as.dist(x))
-plot(clusters)
+plot(clusters) # 2,5,8 | 3,6,9 | 7,4,1,10
+
+
 
 View(bag_ow)
 

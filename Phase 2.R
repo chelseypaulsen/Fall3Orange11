@@ -120,7 +120,15 @@ mtext("Median", at=median(P2019k)+600 , col="darkorange3")
 #--------------------------------------#
 ###### PHASE 2                   #######
 #--------------------------------------#
-simulation.size <- 10000
+
+# General Approach: Build a tiny single row long for one simulation
+# This row could have a cell for each term (or smaller calculation step) in the NPV formula. 
+#   This will get tricky when we're calcing 15 years of a metric.
+# Do the final math for NPV row-wise.
+# Then ultimately change the simulation.size to the desired size (10k or whatever massive number).
+# TODO Incorporate wet well/ dry well logic
+
+simulation.size <- 1
 
 #--------------------------------------#
 ###### Year Zero & Flat Expenses #######
@@ -139,39 +147,42 @@ seismic.costs <- rnorm(simulation.size, mean=3, sd=0.35)*price.p.sec
 completion.costs <- rnorm(simulation.size, mean=390000, sd=50000)
 
 
+
 ###### Professional Overhead #######
-# We believe the salary and benefit cost is best represented by a triangular distribution, 
-rtriangle(simulation.size, a=172000, b=279500, c=215000)
+# salary and benefit cost is best represented by a triangular distribution, 
+overhead <- rtriangle(simulation.size, a=172000, b=279500, c=215000)
 # Constant across the lifetime of a well, but potentially different for different wells. 
-#TODO These costs are incurred during Year 0 as well for drilling, but stop after Year 0 if the well is dry.
+# These costs are incurred during Year 0 as well for drilling, but stop after Year 0 if the well is dry.
+# TODO incorporate this cost into operating expenses.
+
+init.costs <- completion.costs+seismic.costs+acre.costs+overhead
 
 #--------------------------------------#
 ############# Production Risk ##########
 #--------------------------------------#
 
-# IP= Rate at time zero, with Lognormal dist, HINT in HW doc?
-hist(rlnorm(simulation.size, meanlog = 6, sdlog = 0.28))
+# IP= Initial production rate at time zero, with Lognormal dist, HINT in HW doc
+IP <- rlnorm(simulation.size, meanlog = 6, sdlog = 0.28)
 
 # rate of decline is Uniformly distributed b/w 15 and 32 percent
 decline.rate = runif(n=number, min=0.15, max=0.32)
 rate=(1-decline.rate)*rate.prior
 vol = 365*(rate.prior+rate)/2
 # TODO imposed a correlation coefficient of 0.64 between the IP and the decline rate
-
+# TODO Build array for next 15(?) years of production rates
 
 #--------------------------------------#
 ############# Revenue Risk ##########
 #--------------------------------------#
 
 ######## Price of a barrel of crude oil ########
-# TODO Build triangle distribution from Analysis_Data.xlsx data for 15yrs (2019-2033)
+# TODO Map Analysis_Data.xlsx data to lo, hi, expected variables below for 15yrs (2019-2033)
 oil.price <- rtriangle(simulation.size, a=lo, b=hi, c=expected)
 ann.rev = oil.price*ann.prod
 
 ######## Net Revenue Interest ########
 # annual revenues before the royalty payments are simply (Oil Price X Annual Production)
 # This calculation is done per well for the entire life of the well.
-# distributed Normally with a mean of 75% and a standard deviation of 2%. 
 nri = rnorm(simulation.size, mean=0.75, sd=0.02)
 ann.rev.diluted = ann.rev*nri
 
@@ -180,26 +191,32 @@ ann.rev.diluted = ann.rev*nri
 ############# Operating Expenses ##########
 #--------------------------------------#
 
+# TODO Build for operating expenses for every year
+# TODO ?Incoporate logic for a dry well?
+
 # Operating costs per barrel 
-#The expenses would be the same for every well in a given year,
+# The expenses would be the same for every well in a given year,
 # but could change from year to year with this distribution
 op.costs = rnorm(simluation.size, mean=2.25, sd=0.3)
 
 # Taxes (constant), applied after NRI
 t = 0.046
-ann.taxes = ann.rev.diluted*t
+ann.tax = ann.rev.diluted*t
 
-net.sales = gross.sales-(ann.taxes+op.costs)
+# Net sales (AKA FNR or net revenue for the year)
+net.sales = ann.rev.diluted-(ann.tax + op.costs) 
+
+#TODO Incoporate overhead
 
 #--------------------------------------#
 ############# Net Present Value Calculation ##########
 #--------------------------------------#
 
 # weighted average cost of capital (constant)
-wacc = 0.1 #
-denom = 1 + wacc
+wacc <- 0.1 # Constant every year
+denom <- 1 + wacc
 
 ######## Net Present Value ########
-NPV = init.cost + nr.yr1/(denom^1) + nr.yr2/(denom^2) ...
+NPV = init.costs + fnr.yr1/(denom^1) + fnr.yr2/(denom^2) ...
 
 

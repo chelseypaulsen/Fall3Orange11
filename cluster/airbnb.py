@@ -7,8 +7,6 @@ import numpy as np
 import gmplot
 import pickle as pkl
 import datetime as dt
-
-import gmaps
 from sklearn.decomposition import pca
 
 pd.set_option('display.max_columns', 10)
@@ -298,7 +296,7 @@ list_clust = listing10 # selection of prepared df for clustering
 ########## CLUSTERING SENTIMENT ###########
 from sklearn.cluster import KMeans
 
-kmeans = KMeans(n_clusters=5)
+kmeans = KMeans(n_clusters=5, random_state=8)
 sent_temp = list_clust[['compound mean', 'compound std']]  # TODO Should we normalize these???
 # list_temp = listing_clust[['','','',]] # TODO Should use other metrics for clustering too
 
@@ -313,11 +311,12 @@ for cluster in np.unique(y_kmeans):
 plt.clf()
 
 # list ordering terms based on density plot above
-sent_list = ['very good', 'neutral', 'very bad', 'good', 'bad']
+sent_list = ['bad', 'very good', 'good', 'neutral', 'very bad']
 list_clust['sent_clust'] = list_clust['y_kmeans'].apply(lambda x: sent_list[x])
 
 # Plot showing resulting (from mean sentiment scores and sentiment variability)
 sns.distplot(list_clust['compound mean'])
+plt.clf()
 plt.scatter(list_clust['compound mean'],
             list_clust['compound std'],
             c=list_clust['y_kmeans'], s=20, alpha=0.1)
@@ -349,23 +348,64 @@ listings_nhd = listings.groupby(by="neighbourhood_cleansed")[cols].agg('mean')
 pkl.dump(list_clust, open(os.path.join('pickles', 'listing_clust'), "wb"))
 list_clust = pkl.load(open("listing_clust", "rb"))
 
+kmeans = KMeans(n_clusters=5, random_state=8)
+
+loc_temp = list_clust[dist_cols]  # TODO Should we normalize these???
+kmeans.fit(loc_temp.dropna())
+y_kmeans2 = kmeans.predict(loc_temp)
+list_clust['loc_kmeans'] = y_kmeans2
+
+# plot of resulting cluster distrubutions
+for cluster in np.unique(y_kmeans2):
+    sns.distplot(list_clust[list_clust['loc_kmeans'] == cluster]['review_scores_location'], hist=False, kde=True, label=cluster)
+plt.clf()
+
+# list ordering terms based on density plot above
+loc_clust_names = ['1', '2', '3', '4', '5']
+# list_clust['loc_clust'] = list_clust['y_kmeans2'].apply(lambda x: loc_clust_names[x])
+
+# Plot showing resulting (from mean sentiment scores and sentiment variability)
+for cluster in np.unique(y_kmeans2):
+    sns.distplot(list_clust[list_clust['loc_kmeans'] == cluster]['review_scores_location'], hist=False, kde=True, label=cluster)
+
+plt.scatter(list_clust['latitude'],
+            list_clust['longitude'],
+            c=list_clust['y_kmeans2'], s=20, alpha=0.1)
+plt.clf()
+
+###### VISUALIZING PIN MAP ######
+# Used https://georgetsilva.github.io/posts/mapping-points-with-folium/ as guide
+
+import folium
+from folium.plugins import HeatMap
+from folium.plugins import MarkerCluster
+
+locations = list_clust[['latitude', 'longitude']]
+locationlist = locations.values.tolist()
+len(locationlist)
+
+# defining colormap for pins and creating column of pin colors
+loc_cluster_colors = ['red', 'blue', 'green', 'purple', 'orange', 'darkred','lightred', 'beige', 'darkblue', 'darkgreen', 'cadetblue', 'darkpurple', 'white', 'pink', 'lightblue', 'lightgreen', 'gray', 'black', 'lightgray']
+list_clust['icon color'] = list_clust['loc_kmeans'].apply(lambda x: loc_cluster_colors[x])
+
+map = folium.Map(location=[42.35, -71.06], zoom_start=12)
+#marker_cluster = MarkerCluster().add_to(map)
+for point in range(0, len(locationlist)):
+    folium.Marker(locationlist[point], icon=folium.Icon(color=list_clust['icon color'].iloc[point])).add_to(map)
+
+map.save(os.path.join(os.getcwd(), 'results','pinmap_clusters2.html')) ## This requires a 'results' folder in your directory
+
+#PIVOT TABLE
+list_pivot = list_clust.pivot_table(index='neighbourhood_cleansed', columns='sent_clust', values='price', aggfunc='mean')
+
 # sentiment, geographic,
 # Target Matrix: Location Clusters by sentiment clusters, average price * expected bookings for all
-#
-#
-# Under-served w/ quality rental sites
-#
-
-
 
 
 # Build into a listing x keyword matrix
 # compound value from vader
 
-###### VISUALIZING ON MAP ######
-
-import folium
-from folium.plugins import HeatMap
+###### VISUALIZING HEATMAP ######
 # used https://alcidanalytics.com/p/geographic-heatmap-in-python as guide
 
 # Plotting price heat map
@@ -392,16 +432,17 @@ hm_sent = HeatMap( list(zip(list_clust['latitude'], list_clust['longitude'], lis
 hmap.add_child(hm_sent)
 hmap.save(os.path.join(os.getcwd(), 'results', 'heatmap_sent.html')) ## This requires a 'results' folder in your directory
 
-# heat of revenue, TODO Drop NAs
+# TODO Figure out why this isn't working!
+hmap_rev_temp = list_clust[['latitude', 'longitude', 'booked_rev_per_bed']].dropna()
 hmap = folium.Map(location=[42.35, -71.06], zoom_start=12, )
-hm_sent = HeatMap( list(zip(list_clust['latitude'], list_clust['longitude'], list_clust['booked_rev_per_bed'])),
+hm_rev = HeatMap( list(zip(hmap_rev_temp['latitude'], hmap_rev_temp['longitude'], hmap_rev_temp['booked_rev_per_bed'])),
                    min_opacity=0.2,
-                   max_val=list_clust['booked_rev_per_bed'].max(),
+                   max_val= hmap_rev_temp['booked_rev_per_bed'].max(),
                    radius=17, blur=15,
                    max_zoom=1,
                  )
-hmap.add_child(hm_sent)
-hmap.save(os.path.join(os.getcwd(), 'results', 'heatmap_revenue.html')) ## This requires a 'results' folder in your directory
+hmap.add_child(hm_rev)
+hmap.save(os.path.join(os.getcwd(), 'results', 'revenue_hmap.html')) ## This requires a 'results' folder in your directory
 
 
 # TODO Identify distinguishing features b/w positive and negative reviews

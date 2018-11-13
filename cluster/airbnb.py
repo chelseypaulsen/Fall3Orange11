@@ -311,10 +311,12 @@ for cluster in np.unique(y_kmeans):
 plt.clf()
 
 # list ordering terms based on density plot above
-sent_list = ['bad', 'very good', 'good', 'neutral', 'very bad']
+sent_list = ['2 - Bad', '5 - Very Good', '4 - Good', '3 - Neutral', '1 - Very Bad']
 list_clust['sent_clust'] = list_clust['y_kmeans'].apply(lambda x: sent_list[x])
-list_clust['compound norm'] = (list_clust['compound mean'] - list_clust['compound mean'].mean())/list_clust['compound mean'].std()
 
+#calculating normalized sentiment and negative, normalized (inverse?) sentiment
+list_clust['compound norm'] = (list_clust['compound mean'] - list_clust['compound mean'].mean())/list_clust['compound mean'].std()
+list_clust['compound inv'] = (list_clust['compound mean'] - list_clust['compound mean'].mean())/(-1*list_clust['compound mean'].std())
 
 # Plot showing resulting (from mean sentiment scores and sentiment variability)
 sns.distplot(list_clust['compound mean'])
@@ -385,11 +387,18 @@ plt.scatter(list_clust['latitude'],
 ###### PIVOT TABLES ######
 def save_pivots(df):
     # Builds pivot tables of location/sentiment
-    pivot_price = df.pivot_table(index='loc_clust', columns='sent_clust', values='price', aggfunc='mean')
-    pivot_avail30 = df.pivot_table(index='loc_clust', columns='sent_clust', values='availability_30', aggfunc='mean')
-    pivot_avail60 = df.pivot_table(index='loc_clust', columns='sent_clust', values='availability_60', aggfunc='mean')
-    pivot_rev30 = df.pivot_table(index='loc_clust', columns='sent_clust', values='booked_rev30', aggfunc='mean')
-    pivot_rev60 = df.pivot_table(index='loc_clust', columns='sent_clust', values='booked_rev60', aggfunc='mean')
+    pivot_count = df.pivot_table(index='loc_clust', columns='sent_clust', values='price', aggfunc='count',
+                                 margins=True)
+    pivot_price = df.pivot_table(index='loc_clust', columns='sent_clust', values='price', aggfunc='mean',
+                                    margins=True)
+    pivot_avail30 = df.pivot_table(index='loc_clust', columns='sent_clust', values='availability_30', aggfunc='mean',
+                                    margins=True)
+    pivot_avail60 = df.pivot_table(index='loc_clust', columns='sent_clust', values='availability_60', aggfunc='mean',
+                                    margins=True)
+    pivot_rev30 = df.pivot_table(index='loc_clust', columns='sent_clust', values='booked_rev30', aggfunc='mean',
+                                    margins=True)
+    pivot_rev60 = df.pivot_table(index='loc_clust', columns='sent_clust', values='booked_rev60', aggfunc='mean',
+                                    margins=True)
 
     # Is there a difference in revenue by location cluster
     # I will do this by running a group by statement of the clusters and aggreagte by the average
@@ -413,12 +422,13 @@ def save_pivots(df):
     quality_grp = quality_grp.transpose()
 
     # TODO Revenue per bed
-    
+
     # output Pivots table to some sexy csv
     writer = pd.ExcelWriter('pivots.xlsx')
+    pivot_count.to_excel(writer, 'Count')
     pivot_price.to_excel(writer,'Price')
-    pivot_avail30.to_excel(writer,'30-Day Availability')
-    pivot_avail60.to_excel(writer,'60-Day Availability')
+    pivot_avail30.to_excel(writer,'30-Day Avail.')
+    pivot_avail60.to_excel(writer,'60-Day Avail.')
     pivot_rev30.to_excel(writer,'30-Day Revenue')
     pivot_rev60.to_excel(writer,'60-Day Revenue')
     rev_matrix.to_excel(writer, 'Revenue Matrix')
@@ -467,26 +477,27 @@ hmap.save(os.path.join(os.getcwd(), 'results', 'heatmap_price.html')) ## This re
 # Plotting sentiment heat map
 # normalized sentiment... if we're not comfortable defining clusters with this, probably shouldn't use it here... But oh well
 hmap = folium.Map(location=[42.35, -71.06], zoom_start=12, )
-hm_sent = HeatMap( list(zip(list_clust['latitude'], list_clust['longitude'], list_clust['compound norm'])),
+hm_sent = HeatMap( list(zip(list_clust['latitude'], list_clust['longitude'], list_clust['compound inv'])),
                    min_opacity=0.2,
-                   max_val=list_clust['compound norm'].max(),
+                   max_val=list_clust['compound inv'].max(),
                    radius=17, blur=15,
                    max_zoom=1,
                  )
 hmap.add_child(hm_sent)
-hmap.save(os.path.join(os.getcwd(), 'results', 'heatmap_sent.html')) ## This requires a 'results' folder in your directory
+hmap.save(os.path.join(os.getcwd(), 'results', 'heatmap_sentinv.html')) ## This requires a 'results' folder in your directory
 
 # TODO Figure out why this isn't working!
-hmap_rev_temp = list_clust[['latitude', 'longitude', 'booked_rev_per_bed']].dropna()
-hmap = folium.Map(location=[42.35, -71.06], zoom_start=12, )
-hm_rev = HeatMap( list(zip(hmap_rev_temp['latitude'], hmap_rev_temp['longitude'], hmap_rev_temp['booked_rev_per_bed'])),
+hmap_rev_temp = list_clust[['latitude', 'longitude', 'booked_rev30']].dropna()
+hmap_rev_temp['booked_rev_per_bed'] = hmap_rev_temp['booked_rev_per_bed'].round(1)
+
+hmap = folium.Map(location=[42.35, -71.06], zoom_start=12 )
+hm_rev = HeatMap( list(zip(hmap_rev_temp['latitude'].values, hmap_rev_temp['longitude'].values, hmap_rev_temp['booked_rev_per_bed'].values)),
                    min_opacity=0.2,
                    max_val= hmap_rev_temp['booked_rev_per_bed'].max(),
-                   radius=17, blur=15,
-                   max_zoom=1,
+                   max_zoom=1
                  )
 hmap.add_child(hm_rev)
-hmap.save(os.path.join(os.getcwd(), 'results', 'revenue_hmap.html')) ## This requires a 'results' folder in your directory
+hmap.save(os.path.join(os.getcwd(), 'results', 'heatmap_rev_bed.html')) ## This requires a 'results' folder in your directory
 
 
 # TODO Identify distinguishing features b/w positive and negative reviews

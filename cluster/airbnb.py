@@ -384,11 +384,22 @@ plt.scatter(list_clust['latitude'],
 
 ###### PIVOT TABLES ######
 def save_pivots(df):
+    # Builds pivot tables of location/sentiment
     pivot_price = df.pivot_table(index='loc_clust', columns='sent_clust', values='price', aggfunc='mean')
     pivot_avail30 = df.pivot_table(index='loc_clust', columns='sent_clust', values='availability_30', aggfunc='mean')
     pivot_avail60 = df.pivot_table(index='loc_clust', columns='sent_clust', values='availability_60', aggfunc='mean')
     pivot_rev30 = df.pivot_table(index='loc_clust', columns='sent_clust', values='booked_rev30', aggfunc='mean')
     pivot_rev60 = df.pivot_table(index='loc_clust', columns='sent_clust', values='booked_rev60', aggfunc='mean')
+
+    # Is there a difference in revenue by location cluster
+    # I will do this by running a group by statement of the clusters and aggreagte by the average
+    loc_rev = (list_clust.groupby(['loc_clust'], as_index=True).mean().groupby('loc_clust')['booked_rev'].mean())
+    loc_rev30 = (list_clust.groupby(['loc_clust'], as_index=True).mean().groupby('loc_clust')['booked_rev30'].mean())
+    loc_rev60 = (list_clust.groupby(['loc_clust'], as_index=True).mean().groupby('loc_clust')['booked_rev60'].mean())
+    loc_rev90 = (list_clust.groupby(['loc_clust'], as_index=True).mean().groupby('loc_clust')['booked_rev90'].mean())
+    rev_matrix = pd.concat([loc_rev, loc_rev30, loc_rev60, loc_rev90], axis=1, join_axes=[loc_rev.index])
+
+    #quality measures to better understand what contributes to high sentiment in reviews
     quality_cols = ['first_review',
                     'last_review',
                     'review_scores_rating',
@@ -402,7 +413,7 @@ def save_pivots(df):
     quality_grp = quality_grp.transpose()
 
     # TODO Revenue per bed
-
+    
     # output Pivots table to some sexy csv
     writer = pd.ExcelWriter('pivots.xlsx')
     pivot_price.to_excel(writer,'Price')
@@ -410,6 +421,7 @@ def save_pivots(df):
     pivot_avail60.to_excel(writer,'60-Day Availability')
     pivot_rev30.to_excel(writer,'30-Day Revenue')
     pivot_rev60.to_excel(writer,'60-Day Revenue')
+    rev_matrix.to_excel(writer, 'Revenue Matrix')
     quality_grp.to_excel(writer,'Measures of Sentiment')
     writer.save()
 
@@ -487,11 +499,4 @@ hmap.save(os.path.join(os.getcwd(), 'results', 'revenue_hmap.html')) ## This req
 # TODO Visualize
 
 
-#Is there a difference in revenue by location cluster
-#I will do this by running a group by statement of the clusters and aggreagte by the average
 
-loc_rev = (list_clust.groupby(['loc_clust'], as_index=True).mean().groupby('loc_clust')['booked_rev'].mean())
-loc_rev30 = (list_clust.groupby(['loc_clust'], as_index=True).mean().groupby('loc_clust')['booked_rev30'].mean())
-loc_rev60 = (list_clust.groupby(['loc_clust'], as_index=True).mean().groupby('loc_clust')['booked_rev60'].mean())
-loc_rev90 = (list_clust.groupby(['loc_clust'], as_index=True).mean().groupby('loc_clust')['booked_rev90'].mean())
-rev_matrix = pd.concat([loc_rev, loc_rev30, loc_rev60, loc_rev90], axis=1, join_axes=[loc_rev.index])

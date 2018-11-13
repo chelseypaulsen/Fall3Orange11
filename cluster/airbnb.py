@@ -460,3 +460,13 @@ hmap.save(os.path.join(os.getcwd(), 'results', 'revenue_hmap.html')) ## This req
 # TODO Calc future booking frequency from calendar for each property
 # TODO Calc average future revenue for each cluster
 # TODO Visualize
+
+
+#Is there a difference in revenue by location cluster
+#I will do this by running a group by statement of the clusters and aggreagte by the average
+
+loc_rev = (list_clust.groupby(['loc_clust'], as_index=True).mean().groupby('loc_clust')['booked_rev'].mean())
+loc_rev30 = (list_clust.groupby(['loc_clust'], as_index=True).mean().groupby('loc_clust')['booked_rev30'].mean())
+loc_rev60 = (list_clust.groupby(['loc_clust'], as_index=True).mean().groupby('loc_clust')['booked_rev60'].mean())
+loc_rev90 = (list_clust.groupby(['loc_clust'], as_index=True).mean().groupby('loc_clust')['booked_rev90'].mean())
+rev_matrix = pd.concat([loc_rev, loc_rev30, loc_rev60, loc_rev90], axis=1, join_axes=[loc_rev.index])

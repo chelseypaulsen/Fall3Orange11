@@ -313,6 +313,8 @@ plt.clf()
 # list ordering terms based on density plot above
 sent_list = ['bad', 'very good', 'good', 'neutral', 'very bad']
 list_clust['sent_clust'] = list_clust['y_kmeans'].apply(lambda x: sent_list[x])
+list_clust['compound norm'] = (list_clust['compound mean'] - list_clust['compound mean'].mean())/list_clust['compound mean'].std()
+
 
 # Plot showing resulting (from mean sentiment scores and sentiment variability)
 sns.distplot(list_clust['compound mean'])
@@ -335,7 +337,7 @@ plt.clf()
 list_clust['sent_clust'].value_counts()
 
 pkl.dump(list_clust, open(os.path.join('pickles', 'list_sent_clust'), "wb"))
-# list_clust = pkl.load(open(os.path.join('pickles', 'list_sent_clust'), "rb"))
+list_clust = pkl.load(open(os.path.join('pickles', 'list_sent_clust'), "rb"))
 
 ########## CLUSTERING GEORGAPHY ###########
 dist_cols = [col for col in listings.columns if '_dist' in col]
@@ -344,10 +346,6 @@ resp = ['price', 'review_scores_rating', 'review_scores_location']
 cols = dist_cols + geo_cols + resp
 listings_nhd = listings.groupby(by="neighbourhood_cleansed")[cols].agg('mean')
 
-
-pkl.dump(list_clust, open(os.path.join('pickles', 'listing_clust'), "wb"))
-list_clust = pkl.load(open("listing_clust", "rb"))
-
 kmeans = KMeans(n_clusters=5, random_state=8)
 
 loc_temp = list_clust[dist_cols]  # TODO Should we normalize these???
@@ -355,23 +353,42 @@ kmeans.fit(loc_temp.dropna())
 y_kmeans2 = kmeans.predict(loc_temp)
 list_clust['loc_kmeans'] = y_kmeans2
 
+pkl.dump(list_clust, open(os.path.join('pickles', 'list_loc_clust'), "wb"))
+#list_clust = pkl.load(open(os.path.join('pickles', 'list_loc_clust'), "rb"))
+
+
+###### SCATTER PLOTS ######
+
 # plot of resulting cluster distrubutions
 for cluster in np.unique(y_kmeans2):
     sns.distplot(list_clust[list_clust['loc_kmeans'] == cluster]['review_scores_location'], hist=False, kde=True, label=cluster)
 plt.clf()
 
 # list ordering terms based on density plot above
-loc_clust_names = ['1', '2', '3', '4', '5']
-# list_clust['loc_clust'] = list_clust['y_kmeans2'].apply(lambda x: loc_clust_names[x])
+loc_clust_names = ['Loc Cluster 1', 'Loc Cluster 2', 'Loc Cluster 3', 'Loc Cluster 4', 'Loc Cluster 5']
+list_clust['loc_clust'] = list_clust['loc_kmeans'].apply(lambda x: loc_clust_names[x])
 
 # Plot showing resulting (from mean sentiment scores and sentiment variability)
 for cluster in np.unique(y_kmeans2):
     sns.distplot(list_clust[list_clust['loc_kmeans'] == cluster]['review_scores_location'], hist=False, kde=True, label=cluster)
 
+# TODO move legend to topleft .legend(loc=2)?
+countplot = sns.countplot(x='review_scores_location', hue='loc_clust', data=list_clust)
+
+plt.figure()
 plt.scatter(list_clust['latitude'],
             list_clust['longitude'],
-            c=list_clust['y_kmeans2'], s=20, alpha=0.1)
-plt.clf()
+            c=list_clust['loc_kmeans'], s=20, alpha=0.1)
+
+
+
+###### PIVOT TABLES ######
+pivot_price = list_clust.pivot_table(index='loc_clust', columns='sent_clust', values='price', aggfunc='mean')
+pivot_avail30 = list_clust.pivot_table(index='loc_clust', columns='sent_clust', values='availability_30', aggfunc='mean')
+pivot_avail60 = list_clust.pivot_table(index='loc_clust', columns='sent_clust', values='availability_60', aggfunc='mean')
+pivot_rev30 = list_clust.pivot_table(index='loc_clust', columns='sent_clust', values='booked_rev30', aggfunc='mean')
+pivot_rev60 = list_clust.pivot_table(index='loc_clust', columns='sent_clust', values='booked_rev60', aggfunc='mean')
+
 
 ###### VISUALIZING PIN MAP ######
 # Used https://georgetsilva.github.io/posts/mapping-points-with-folium/ as guide
@@ -395,15 +412,6 @@ for point in range(0, len(locationlist)):
 
 map.save(os.path.join(os.getcwd(), 'results','pinmap_clusters2.html')) ## This requires a 'results' folder in your directory
 
-#PIVOT TABLE
-list_pivot = list_clust.pivot_table(index='neighbourhood_cleansed', columns='sent_clust', values='price', aggfunc='mean')
-
-# sentiment, geographic,
-# Target Matrix: Location Clusters by sentiment clusters, average price * expected bookings for all
-
-
-# Build into a listing x keyword matrix
-# compound value from vader
 
 ###### VISUALIZING HEATMAP ######
 # used https://alcidanalytics.com/p/geographic-heatmap-in-python as guide
@@ -421,7 +429,6 @@ hmap.save(os.path.join(os.getcwd(), 'results', 'heatmap_price.html')) ## This re
 
 # Plotting sentiment heat map
 # normalized sentiment... if we're not comfortable defining clusters with this, probably shouldn't use it here... But oh well
-list_clust['compound norm'] = (list_clust['compound mean'] - list_clust['compound mean'].mean())/list_clust['compound mean'].std()
 hmap = folium.Map(location=[42.35, -71.06], zoom_start=12, )
 hm_sent = HeatMap( list(zip(list_clust['latitude'], list_clust['longitude'], list_clust['compound norm'])),
                    min_opacity=0.2,

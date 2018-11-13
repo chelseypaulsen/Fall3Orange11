@@ -383,12 +383,37 @@ plt.scatter(list_clust['latitude'],
 
 
 ###### PIVOT TABLES ######
-pivot_price = list_clust.pivot_table(index='loc_clust', columns='sent_clust', values='price', aggfunc='mean')
-pivot_avail30 = list_clust.pivot_table(index='loc_clust', columns='sent_clust', values='availability_30', aggfunc='mean')
-pivot_avail60 = list_clust.pivot_table(index='loc_clust', columns='sent_clust', values='availability_60', aggfunc='mean')
-pivot_rev30 = list_clust.pivot_table(index='loc_clust', columns='sent_clust', values='booked_rev30', aggfunc='mean')
-pivot_rev60 = list_clust.pivot_table(index='loc_clust', columns='sent_clust', values='booked_rev60', aggfunc='mean')
+def save_pivots(df):
+    pivot_price = df.pivot_table(index='loc_clust', columns='sent_clust', values='price', aggfunc='mean')
+    pivot_avail30 = df.pivot_table(index='loc_clust', columns='sent_clust', values='availability_30', aggfunc='mean')
+    pivot_avail60 = df.pivot_table(index='loc_clust', columns='sent_clust', values='availability_60', aggfunc='mean')
+    pivot_rev30 = df.pivot_table(index='loc_clust', columns='sent_clust', values='booked_rev30', aggfunc='mean')
+    pivot_rev60 = df.pivot_table(index='loc_clust', columns='sent_clust', values='booked_rev60', aggfunc='mean')
+    quality_cols = ['first_review',
+                    'last_review',
+                    'review_scores_rating',
+                    'review_scores_accuracy',
+                    'review_scores_cleanliness',
+                    'review_scores_checkin',
+                    'review_scores_communication',
+                    'review_scores_location',
+                    'review_scores_value']
+    quality_grp = list_clust[['sent_clust'] + quality_cols].groupby(by=['sent_clust']).agg(['mean'])
+    quality_grp = quality_grp.transpose()
 
+    # TODO Revenue per bed
+
+    # output Pivots table to some sexy csv
+    writer = pd.ExcelWriter('pivots.xlsx')
+    pivot_price.to_excel(writer,'Price')
+    pivot_avail30.to_excel(writer,'30-Day Availability')
+    pivot_avail60.to_excel(writer,'60-Day Availability')
+    pivot_rev30.to_excel(writer,'30-Day Revenue')
+    pivot_rev60.to_excel(writer,'60-Day Revenue')
+    quality_grp.to_excel(writer,'Measures of Sentiment')
+    writer.save()
+
+save_pivots(list_clust)
 
 ###### VISUALIZING PIN MAP ######
 # Used https://georgetsilva.github.io/posts/mapping-points-with-folium/ as guide

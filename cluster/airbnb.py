@@ -449,8 +449,13 @@ from folium.plugins import HeatMap
 from folium.plugins import MarkerCluster
 
 locations = list_clust[['latitude', 'longitude']]
+locationnames = list_clust[['name']]
 locationlist = locations.values.tolist()
 len(locationlist)
+
+attractions2 = attractions[['Latitude', 'Longitude']]
+attractionslist = attractions2.values.tolist()
+len(attractionslist)
 
 # defining colormap for pins and creating column of pin colors
 loc_cluster_colors = ['red', 'blue', 'green', 'purple', 'orange', 'darkred','lightred', 'beige', 'darkblue', 'darkgreen', 'cadetblue', 'darkpurple', 'white', 'pink', 'lightblue', 'lightgreen', 'gray', 'black', 'lightgray']
@@ -459,8 +464,9 @@ list_clust['icon color'] = list_clust['loc_kmeans'].apply(lambda x: loc_cluster_
 boston = folium.Map(location=[42.35, -71.06], zoom_start=12)
 #marker_cluster = MarkerCluster().add_to(map)
 for point in range(0, len(locationlist)):
-    folium.Marker(locationlist[point], icon=folium.Icon(color=list_clust['icon color'].iloc[point])).add_to(boston)
-
+    folium.CircleMarker(locationlist[point], radius=2, color=list_clust['icon color'].iloc[point]).add_to(boston)
+for point2 in range(0,len(attractionslist)):
+    folium.Marker(attractionslist[point2], popup=attractions.iloc[point2]['Name'], icon=folium.Icon(color='gray', icon='star')).add_to(boston)
 boston.save(os.path.join(os.getcwd(), 'results','pinmap_clusters2.html')) ## This requires a 'results' folder in your directory
 
 

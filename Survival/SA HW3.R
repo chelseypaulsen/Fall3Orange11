@@ -23,7 +23,7 @@ katrina = read.csv(file='C:\\Users\\chels\\Desktop\\MSA\\Fall 3\\Survival Analys
 Surv(time = katrina$hour, event = katrina$reason %in% c(2,3))
 
 
-#fit aft models
+#fit aft models -- all aft models are really bad!
 #weibull - plot looks REALLY BAD
 fit <- survreg(Surv(hour, reason %in% c(2,3)) ~ backup + bridgecrane + servo + trashrack + elevation +
                  slope + age, data = katrina, dist = "weibull")
@@ -85,7 +85,7 @@ concordance(fit_cox)
 #discordant concordant     tied.x     tied.y    tied.xy 
 #67487      33767         21       2048          2
 
-
+####### Check Conditions #########
 
 ### plot residuals
 # create data frame with the event, time, martingale residuals, deviance

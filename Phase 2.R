@@ -12,6 +12,7 @@ library(ks)
 # install.packages('triangle')
 library(triangle)
 library("readxl")
+library(dplyr)
 
 #reading the data frame. Notice that that the rows are now 1-48 instead of 3-51 in the xlsx file. 
 #df <- read_xlsx("C:\\Users\\chels\\Desktop\\MSA\\Fall 3\\Simulation and Risk Analysis\\HW1\\Analysis_Data.xlsx",2,col_names=TRUE, col_types = c("date", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric"), range='A3:G51')
@@ -138,8 +139,6 @@ mtext("Median", at=median(P2019k)+600 , col="darkorange3")
 
 simulation.size <- 1
 
-
-
 #--------------------------------------#
 ###### Year Zero & Flat Expenses #######
 #--------------------------------------#
@@ -173,7 +172,7 @@ if (num.years == 0) {
 }
 
 # Sum for total "Year 0 Expenses" = init.costs
-init.costs <- acre.costs + seismic.costs + completion.costs + prof.overhead
+init.costs <- acre.costs + seismic.costs + completion.costs
 init.costs
 
 
@@ -190,8 +189,6 @@ IP <- rlnorm(simulation.size2, meanlog = 6, sdlog = .28)
 ####### Rate of decline is Uniformly distributed b/w 15 and 32 percent
 # YE = Year End | YB = Year Beginning
 decline.rate = runif(simulation.size2, min=0.15, max=0.32)
-# rate_YE=(1-decline.rate)*rate_YB  ### NOT SURE HOW TO APPLY THESE EQUATIONS
-# oil_vol = 365*(rate_YB+rate_YE)/2
 
 ###### Impose Correlation ######
 R <- matrix(data=cbind(1, 0.64, 0.64, 1), nrow=2)
@@ -227,42 +224,67 @@ SB.r <- t(SB.r) # t() = transpose # put it back in the normal form
 final.SB.r <- cbind(destandardize_IP(SB.r[,1], S.r), destandardize_DR(SB.r[,2], B.r))
 final.SB.r
 
-# Not sure how to manage this for loop for the equations
+df_oil_vol = matrix(, 15, simulation.size2)
 for (i in 1:15){
   if (i == 1) {
-    rate_YE=(1-decline.rate)*IP  ### NOT SURE HOW TO APPLY THESE EQUATIONS
-    oil_vol = 365*(IP+rate_YE)/2
-  } else { 
-    rate_YE=(1-decline.rate)*rate_YB  ### NOT SURE HOW TO APPLY THESE EQUATIONS
+    rate_YB = IP
+    rate_YE=(1-decline.rate)*rate_YB  
     oil_vol = 365*(rate_YB+rate_YE)/2
+    print(rate_YE)
+  } else {
+    rate_YB= rate_YE
+    rate_YE=(1-decline.rate)*rate_YB  
+    oil_vol = 365*(rate_YB+rate_YE)/2
+    print(rate_YE)
   }
+  df_oil_vol[i,] = oil_vol
 }
+dim(df_oil_vol)
+ann.prod = df_oil_vol
+dim(ann.prod)
+
 # Make for loop for calculating the equations
 #--------------------------------------#
 ############# Revenue Risk ##########
 #--------------------------------------#
 df2 = read_xlsx("C:\\Users\\jlmic\\Documents\\Simulation and Risk\\Data\\Analysis_Data.xlsx",1,col_names=TRUE,range='A3:D35')
 df2 = df2[1:15,]
+dim(df2)
+View(df2)
+
 
 ######## Price of a barrel of crude oil ########
-# Make an empty dataframe for the 15 oil prices
-oil = rep(0,15)
+# Make an empty dataframe for the 15 years and oil prices
+
+oil = matrix(, 15, simulation.size2)
 for (i in 1:nrow(df2) ) {
-  oil.price <- rtriangle(simulation.size2, a=df2$`Low Oil Price`, b=df2$`High Oil Price`, c=df2$`AEO2018 Reference`)
-  oil[i] = oil.price
+  oil.price <- rtriangle(simulation.size2, a=df2$`Low Oil Price`[i], b=df2$`High Oil Price`[i], c=df2$`AEO2018 Reference`[i])
+  oil[i,] = oil.price
 }
-View(oil) # THis makes sense now
-hist(oil, breaks=50, col = 'cornflowerblue')#, main='2019 Cost Distribution Using Normal Approximation for 2006-2012', xlab='2019 Cost (Thousand Dollars)')
 
-
+final_year = colSums(oil)
+hist(final_year, breaks=50, col = 'cornflowerblue', main='Oil Price Normal Approximation for 2019-2033')#, xlab='2019 Cost (Thousand Dollars)')
 
   
 ######## Net Revenue Interest ########
 # annual revenues before the royalty payments are simply (Oil Price X Annual Production)
 # This calculation is done per well for the entire life of the well.
-nri = rnorm(simulation.size, mean=0.75, sd=0.02)
-ann.rev = oil.price*ann.prod
-ann.rev.diluted = ann.rev*nri
+NRI = rnorm(simulation.size, mean=0.75, sd=0.02)
+NRI
+Annual_Rev = oil*ann.prod # Annual Revenue as a distribution
+Dil.Rev = Annual_Rev*NRI # Diluted Revenue as a dsitribution
+
+
+# need a dataframe with columns: year, oil price, and oil_vol (for each year)
+# df_annual = data.frame(matrix(ncol=3, nrow=15))
+# df_annual = df_annual %>%
+#   mutate(Year = seq(1,15)) %>%
+#   mutate(Oil.Price = rowMeans(oil)) %>%
+#   mutate(Ann.Prod = rowMeans(df_oil_vol)) %>%
+#   mutate(Annual.Rev = Oil.Price*Ann.Prod) %>%
+#   mutate(Dil.Rev = Annual.Rev*NRI) %>%
+#   select(Year, Oil.Price, Ann.Prod, Annual.Rev, Dil.Rev)
+# View(df_annual)
 
 
 #--------------------------------------#
@@ -272,26 +294,52 @@ ann.rev.diluted = ann.rev*nri
 # Operating costs per barrel 
 # The expenses would be the same for every well in a given year,
 # but could change from year to year with this distribution
-op.costs = rnorm(simluation.size, mean=2.25, sd=0.3)
+# assign the distribution of operational costs
+OperationCost = matrix(,15,10000)
+for (i in 1:15){
+  op.costs = rnorm(n=1, mean=2.25, sd=0.3)
+  OperationCost[i,] = ann.prod[i,]*op.costs
+  print(op.costs)
+}
+dim(OperationCost)
 
-# Taxes (constant), applied after NRI
-t = 0.046
-ann.tax = ann.rev.diluted*t
+# Calculating the Professional Overhead
+prof.overhead = rtriangle(n=1, a=172000, b=279500, c=215000)
+PO = rep(0, 15 )
+for (i in 0:15){
+  if (i == 0) {
+    ProfOverhead_Year0 <- prof.overhead*(1)
+  } else {
+    PO[i] <- prof.overhead*(1+i)
+  }
+}
 
-# Net sales (AKA FNR or net revenue for the year)
-net.sales = ann.rev.diluted-(ann.tax + op.costs) 
+# Replicate PO to have 10000 columns for #MatrixMath
+df_PO = replicate(10000, PO)
+dim(df_PO)
+FNR = ((Dil.Rev - OperationCost - df_PO)*(1-.046)) #0.046 = Severance Tax
+dim(FNR)  
 
-#TODO Incoporate overhead
-
-#--------------------------------------#
-############# Net Present Value Calculation ##########
-#--------------------------------------#
+# #--------------------------------------#
+# ############# Net Present Value Calculation ##########
+# #--------------------------------------#
+init.costs = acre.costs + seismic.costs + completion.costs + ProfOverhead_Year0
 
 # weighted average cost of capital (constant)
 wacc <- 0.1 # Constant every year
-denom <- 1 + wacc
+denom <- (1 + wacc)
 
-######## Net Present Value ########
-NPV = init.costs + fnr.yr1/(denom^1) + fnr.yr2/(denom^2) ...
 
+### NET PRESENT VALUE ###
+df_total = matrix(0,15,10000)
+df_total[1,1]
+for (i in 1:nrow(FNR)){
+  total = (FNR[i]/denom^i)
+  df_total = df_total + total
+}
+
+dim(df_total)
+df_total[1,1] # Check to see if multi by 1000
+NPV = df_total[15,:]
+dim(NPV)
 

@@ -54,6 +54,7 @@ def initial_cleaning(cal, listings, revs):
 
     return cal, listings
 
+
 def cal_extract(row):
     """
     EXTRACT CALENDAR INFO
@@ -101,6 +102,78 @@ print("Calendar summarized into listings. \n")
 # pkl.dump(listings, open(os.path.join('pickles', 'listings_cal'), "wb"))
 # list_clust = pkl.load(open(os.path.join('pickles', 'listings_cal'), "rb"))
 
+all_amenities = ['TV',
+ 'Internet',
+ 'Wireless Internet',
+ 'Air Conditioning',
+ 'Kitchen',
+ 'Pets Allowed',
+ 'Pets live on this property',
+ 'Dog(s)',
+ 'Heating',
+ 'Family/Kid Friendly',
+ 'Washer',
+ 'Dryer',
+ 'Smoke Detector',
+ 'Carbon Monoxide Detector',
+ 'Fire Extinguisher',
+ 'Essentials',
+ 'Shampoo',
+ 'Lock on Bedroom Door',
+ 'Hangers',
+ 'Hair Dryer',
+ 'Iron',
+ 'Cable TV',
+ 'Free Parking on Premises',
+ 'First Aid Kit',
+ 'Safety Card',
+ 'Breakfast',
+ '24-Hour Check-in',
+ 'Indoor Fireplace',
+ 'Laptop Friendly Workspace',
+ 'Cat(s)',
+ 'Buzzer/Wireless Intercom',
+ 'Other pet(s)',
+ 'Hot Tub',
+ 'Suitable for Events',
+ 'Smoking Allowed',
+ 'Wheelchair Accessible',
+ 'Gym',
+ 'Elevator in Building',
+ 'Washer / Dryer',
+ 'Doorman',
+ 'Pool',
+ 'Paid Parking Off Premises',
+ 'Free Parking on Street']
+
+def amenity_exp(row):
+    """
+    takes the amenities column, which is some weird object that I don't understand converts it into a sparse matrix
+    best called on the listing dataframe with `.apply(amenity_exp, axis=1)`
+    ------
+    :param: dependent on all_amenities
+    ------
+    :return: single row of listing df, with new columns of amenity data (1 if it has, 0 if it doesn't have it)
+                might change the order of the dataframe.. I don't know?!
+
+    """
+    # clean_amen = list(row["amenities"].strip('{}').replace('"', '').split(sep=","))
+    for amenity in all_amenities:
+        row[amenity] = 1
+        if amenity in str(row['amenities']):
+            row[amenity] = 1
+        else:
+            row[amenity] = 0
+
+    return row
+
+
+listings = listings.apply(amenity_exp, axis=1)
+#list_clust = list_clust.apply(amenity_exp, axis=1)
+
+pkl.dump(listings, open(os.path.join('pickles', 'listings_cln'), "wb"))
+# listings = pkl.load(open(os.path.join('pickles', 'listings_cln'), "rb"))
+
 
 ###### ATTRACTION PROXIMITY #######
 # Convert the Pandas series of Lat and Long to Floats so we can do math on them
@@ -127,11 +200,12 @@ def euc_dist_attraction(name, attract_number):
         dist = np.linalg.norm(a - b)
         name.append(dist)
 
-# This is going to be inefficient but its happening
-# We will use the previous function to create a list of distances between each attraction and each listing separately
 
 ###### Calcs #######
 def dist_calcs(df):
+    # This is going to be inefficient but its happening
+    # We will use the previous function to create a list of distances between each attraction and each listing separately
+
     Fenway_dist = []
     euc_dist_attraction(Fenway_dist, 0)
     df['Fenway_dist'] = pd.Series(Fenway_dist, index=df.index)
@@ -239,6 +313,7 @@ def dist_calcs(df):
     print("Calculated distances of listings to attractions. \n")
     return df
 
+
 listings_dist = dist_calcs(listings)
 
 pkl.dump(listings_dist, open(os.path.join('pickles', 'listings_dist'), "wb"))
@@ -343,7 +418,7 @@ plt.clf()
 list_clust['sent_clust'].value_counts()
 
 pkl.dump(list_clust, open(os.path.join('pickles', 'list_sent_clust'), "wb"))
-list_clust = pkl.load(open(os.path.join('pickles', 'list_sent_clust'), "rb"))
+#list_clust = pkl.load(open(os.path.join('pickles', 'list_sent_clust'), "rb"))
 
 ########## CLUSTERING GEORGAPHY ###########
 dist_cols = [col for col in listings.columns if '_dist' in col]
@@ -422,7 +497,7 @@ def save_pivots(df):
                     'review_scores_communication',
                     'review_scores_location',
                     'review_scores_value']
-    quality_grp = list_clust[['sent_clust'] + quality_cols].groupby(by=['sent_clust']).agg(['mean'])
+    quality_grp = list_clust[['sent_clust'] + quality_cols + all_amenities].groupby(by=['sent_clust']).agg(['mean'])
     quality_grp = quality_grp.transpose()
 
     # TODO Revenue per bed

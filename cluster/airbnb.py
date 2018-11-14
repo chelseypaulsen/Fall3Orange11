@@ -452,62 +452,64 @@ len(locationlist)
 loc_cluster_colors = ['red', 'blue', 'green', 'purple', 'orange', 'darkred','lightred', 'beige', 'darkblue', 'darkgreen', 'cadetblue', 'darkpurple', 'white', 'pink', 'lightblue', 'lightgreen', 'gray', 'black', 'lightgray']
 list_clust['icon color'] = list_clust['loc_kmeans'].apply(lambda x: loc_cluster_colors[x])
 
-map = folium.Map(location=[42.35, -71.06], zoom_start=12)
+boston = folium.Map(location=[42.35, -71.06], zoom_start=12)
 #marker_cluster = MarkerCluster().add_to(map)
 for point in range(0, len(locationlist)):
-    folium.Marker(locationlist[point], icon=folium.Icon(color=list_clust['icon color'].iloc[point])).add_to(map)
+    folium.Marker(locationlist[point], icon=folium.Icon(color=list_clust['icon color'].iloc[point])).add_to(boston)
 
-map.save(os.path.join(os.getcwd(), 'results','pinmap_clusters2.html')) ## This requires a 'results' folder in your directory
+boston.save(os.path.join(os.getcwd(), 'results','pinmap_clusters2.html')) ## This requires a 'results' folder in your directory
 
 
 ###### VISUALIZING HEATMAP ######
 # used https://alcidanalytics.com/p/geographic-heatmap-in-python as guide
 
+# basemap, can use this to reset the basemap, prior to adding new info
+boston = folium.Map(location=[42.35, -71.06], zoom_start=12, )
+
 # Plotting price heat map
-hmap = folium.Map(location=[42.35, -71.06], zoom_start=12, )
+boston = folium.Map(location=[42.35, -71.06], zoom_start=12, )
 hm_price = HeatMap( list(zip(list_clust['latitude'], list_clust['longitude'], list_clust['price'])),
                    min_opacity=0.2,
                    max_val=list_clust['price'].max(),
                    radius=17, blur=15,
                    max_zoom=1,
                  )
-hmap.add_child(hm_price)
-hmap.save(os.path.join(os.getcwd(), 'results', 'heatmap_price.html')) ## This requires a 'results' folder in your directory
+hm_price.layer_name = 'Price'
+boston.add_child(hm_price)
 
-# Plotting sentiment heat map
-# normalized sentiment... if we're not comfortable defining clusters with this, probably shouldn't use it here... But oh well
-hmap = folium.Map(location=[42.35, -71.06], zoom_start=12, )
-hm_sent = HeatMap( list(zip(list_clust['latitude'], list_clust['longitude'], list_clust['compound inv'])),
+boston.save(os.path.join(os.getcwd(), 'results', 'heatmap_price.html')) ## This requires a 'results' folder in your directory
+
+# Plotting inverse sentiment heat map
+boston = folium.Map(location=[42.35, -71.06], zoom_start=12, )
+hm_invsent = HeatMap( list(zip(list_clust['latitude'], list_clust['longitude'], list_clust['compound inv'])),
                    min_opacity=0.2,
                    max_val=list_clust['compound inv'].max(),
                    radius=17, blur=15,
                    max_zoom=1,
                  )
-hmap.add_child(hm_sent)
-hmap.save(os.path.join(os.getcwd(), 'results', 'heatmap_sentinv.html')) ## This requires a 'results' folder in your directory
+hm_invsent.layer_name = 'Negative Review Sentiment'
+boston.add_child(hm_invsent)
+boston.save(os.path.join(os.getcwd(), 'results', 'invsent_n_pins.html')) ## This requires a 'results' folder in your directory
 
-# TODO Figure out why this isn't working!
-hmap_rev_temp = list_clust[['latitude', 'longitude', 'booked_rev30']].dropna()
-hmap_rev_temp['booked_rev_per_bed'] = hmap_rev_temp['booked_rev_per_bed'].round(1)
+revenue_temp = list_clust[['latitude', 'longitude', 'booked_rev30']].dropna()
+revenue_temp['booked_rev30'] = revenue_temp['booked_rev30'].round(1)
 
-hmap = folium.Map(location=[42.35, -71.06], zoom_start=12 )
-hm_rev = HeatMap( list(zip(hmap_rev_temp['latitude'].values, hmap_rev_temp['longitude'].values, hmap_rev_temp['booked_rev_per_bed'].values)),
-                   min_opacity=0.2,
-                   max_val= hmap_rev_temp['booked_rev_per_bed'].max(),
-                   max_zoom=1
+boston = folium.Map(location=[42.35, -71.06], zoom_start=12, )
+hm_rev = HeatMap(list(zip(revenue_temp['latitude'].values, revenue_temp['longitude'].values, revenue_temp['booked_rev30'].values)),
+                 min_opacity=0.2,
+                 max_val= revenue_temp['booked_rev30'].max(),
+                 max_zoom=1
                  )
-hmap.add_child(hm_rev)
-hmap.save(os.path.join(os.getcwd(), 'results', 'heatmap_rev_bed.html')) ## This requires a 'results' folder in your directory
+hm_rev.layer_name = '30-day Booked Revenue'
+boston.add_child(hm_rev)
+boston.save(os.path.join(os.getcwd(), 'results', 'heatmap_rev.html')) ## This requires a 'results' folder in your directory
+
+folium.LayerControl().add_to(boston)
+boston.save(os.path.join(os.getcwd(), 'results', 'Boston_AirBNB.html'))
 
 
 # TODO Identify distinguishing features b/w positive and negative reviews
-#
-
-###### REVENUE CALCULATIONS #######
-# TODO Calc average nightly rate of each cluster
-# TODO Calc future booking frequency from calendar for each property
-# TODO Calc average future revenue for each cluster
-# TODO Visualize
+# TODO Visualize some of the summary tables
 
 
 

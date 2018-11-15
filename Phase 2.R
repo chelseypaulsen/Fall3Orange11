@@ -296,7 +296,7 @@ test = Annual_Rev[1,]
 hist(test)
 median(test)
 mean(test)
-Dil.Rev = Annual_Rev*NRI # Diluted Revenue as a dsitribution
+Dil.Rev = Annual_Rev*NRI # Diluted Revenue as a distribution
 test = colSums(Dil.Rev)
 hist(test)
 mean(test)
@@ -318,30 +318,39 @@ dim(OperationCost)
 OperationCost[1:15,1:10]
 hist(OperationCost[15,])
 
-# Calculating the Professional Overhead # change for 10000
-prof.overhead = rtriangle(n=1, a=172000, b=279500, c=215000)
-PO = rep(0, 15 )
-for (i in 0:15){
-  if (i == 0) {
-    ProfOverhead_Year0 <- prof.overhead*(1)
-  } else {
-    PO[i] <- prof.overhead*(1+i)r
+# Calculating the Professional Overhead # change for 10000 And DO NOT COMPOUND
+PO = matrix(0,15,10000)
+for(j in 1:10000){
+  prof.overhead = rtriangle(n=1, a=172000, b=279500, c=215000)
+  for(i in 0:15){
+    PO[i,j] <- prof.overhead
   }
 }
-PO[1:15]
-# Replicate PO to have 10000 columns for #MatrixMath
-df_PO = replicate(10000, PO)
-dim(df_PO)
-df_PO[1:15,1:10]
+PO[1:15,1:10]
 
-FNR = ((Dil.Rev - OperationCost - df_PO)*(1-.046)) #0.046 = Severance Tax
+FNR = ((Dil.Rev - OperationCost - PO)*(1-.046)) #0.046 = Severance Tax
 dim(FNR)  
-
+PO[1:15,1:10]
+Dil.Rev[1:15,1:10]
+OperationCost[1:15,1:10]
 FNR[1:15,1:10]
 # #--------------------------------------#
 # ############# Net Present Value Calculation ##########
 # #--------------------------------------#
-init.costs = acre.costs + seismic.costs + completion.costs + ProfOverhead_Year0 + drilling
+
+# need to fix each cost to be a distribution
+df_init_costs = matrix(0,15,10000)
+for (j in 1:10000) {
+  for (i in 1:15){
+    acre.costs <- rnorm(simulation.size, mean=600, sd=50)*price.p.acre
+    seismic.costs <- rnorm(simulation.size, mean=3, sd=0.35)*price.p.sec
+    completion.costs = rnorm(simulation.size, mean=390000, sd=50000)
+    drilling = P2019k[runif(simulation.size,1,10000)]*1000
+    df_init_costs[i,j] = sum(acre.costs, seismic.costs, completion.costs, drilling)
+  }
+}
+
+init_costs[1:15,1:10]
 
 # weighted average cost of capital (constant)
 
@@ -363,16 +372,14 @@ for (i in 1:nrow(FNR)) {
 }
 
 
-init.costs
 dim(df_total)
 df_total[2,1]
 df_total[1:15,1:10]
+NPV_year = df_total - df_init_costs
+initcosts_y15 = colSums(df_init_costs)
 year15 = colSums(df_total)#sum to get year 15
 year15[1:10]
-NPV = year15 - init.costs
-init.costs
 
-NPV[2] == year15[2] - init.costs # checks to make sure it works!
 
 hist(NPV, breaks=50)
 median(NPV)

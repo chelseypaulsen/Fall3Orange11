@@ -155,7 +155,6 @@ seismic.costs <- rnorm(simulation.size, mean=3, sd=0.35)*price.p.sec
 # completion.costs <- rnorm(simulation.size, mean=390000, sd=50000)
 completion.costs = rnorm(simulation.size, mean=390000, sd=50000)
 
-
 ###### Professional Overhead #######
 # salary and benefit cost is best represented by a triangular distribution: 
 # Need to incorporate how to determine it being different for different wells
@@ -192,12 +191,11 @@ median(dry_well)
 ####### IP= Initial production rate at time zero, with Lognormal dist, HINT in HW doc
 simulation.size2 = 10000
 IP <- rlnorm(simulation.size2, meanlog = 6, sdlog = .28)
-IP
 
 ####### Rate of decline is Uniformly distributed b/w 15 and 32 percent
 # YE = Year End | YB = Year Beginning
 decline.rate = runif(simulation.size2, min=0.15, max=0.32)
-
+mean(decline.rate)
 ###### Impose Correlation ######
 R <- matrix(data=cbind(1, 0.64, 0.64, 1), nrow=2)
 U <- t(chol(R)) #choleski function
@@ -233,48 +231,82 @@ SB.r <- t(SB.r) # t() = transpose # put it back in the normal form
 
 final.SB.r <- cbind(destandardize_DR(SB.r[,1], S.r), destandardize_IP(SB.r[,2], B.r))
 head(final.SB.r)
+final.SB.r[1:15,1:2]
 dim(final.SB.r)
+
+#### Going to re-try making the choleski
+standardize <- function(x){
+  x.std = (x - mean(x))/sd(x)
+  return(x.std)
+}
+
+destandardize <- function(x.std, x){
+  x.old = (x.std * sd(x)) + mean(x)
+  return(x.old)
+}
+final.DR_IP = matrix(0, 10000, 2)
+for(j in 1:10000){
+  # @#@#@#@ move this out of loop for homework 
+  IP <- rlnorm(simulation.size2, meanlog = 6, sdlog = .28)
+  decline.rate = runif(simulation.size2, min=0.15, max=0.32)
+  Both.r <- cbind(standardize(decline.rate), standardize(IP))
+  SB.r <- U %*% t(Both.r) # they become correlated multiplies in correlation structure # U is cholseki
+  SB.r <- t(SB.r) # t() = transpose # put it back in the normal form
+  # @#@#@#@
+  final.DR_IP[j] <- cbind(destandardize(SB.r[,1], decline.rate), destandardize(SB.r[,2], IP))
+  
+}
 
 df_oil_vol = matrix(0, 15, simulation.size2)
 for (j in 1:10000){
+  IP <- rlnorm(simulation.size2, meanlog = 6, sdlog = .28)
+  decline.rate = runif(simulation.size2, min=0.15, max=0.32)
+  Both.r <- cbind(standardize(decline.rate), standardize(IP))
+  SB.r <- U %*% t(Both.r) # they become correlated multiplies in correlation structure # U is cholseki
+  SB.r <- t(SB.r) # t() = transpose # put it back in the normal form
+  
+  final.DR_IP <- cbind(destandardize(SB.r[,1], decline.rate), destandardize(SB.r[,2], IP))
   for (i in 1:15){
     if (i == 1) {
-      rate_YB = final.SB.r[j,2]
-      rate_YE=(1-final.SB.r[j,1])*rate_YB
+      rate_YB = final.DR_IP[j,2]
+      rate_YE=(1-final.DR_IP[j,1])*rate_YB
       oil_vol = 365*(rate_YB+rate_YE)/2
     } else {
       rate_YB= rate_YE
-      rate_YE=(1-final.SB.r[j,1])*rate_YB
+      rate_YE=(1-final.DR_IP[j,1])*rate_YB
       oil_vol = 365*(rate_YB+rate_YE)/2
     }
     df_oil_vol[i,j] = oil_vol
   }
 }
-df_oil_vol[1:15,1:10]
-hist(unlist(df_oil_vol))
+df_oil_vol[1:15, 1:30]
+# End choleski retry
+
 ann.prod = df_oil_vol
-ann.prod
+ann.prod[1:15,1:10]
 dim(ann.prod)
-test = ann.prod[1,]
+test = ann.prod[15,]
 hist(test)
 median(test)
+
+
 # Make for loop for calculating the equations
 #--------------------------------------#
 ############# Revenue Risk ##########
 #--------------------------------------#
 df2 = read_xlsx("C:\\Users\\jlmic\\Documents\\Simulation and Risk\\Data\\Analysis_Data.xlsx",1,col_names=TRUE,range='A3:D35')
 df2 = df2[1:15,]
-dim(df2)
-View(df2)
 
 
 ######## Price of a barrel of crude oil ########
 # Make an empty dataframe for the 15 years and oil prices
 
 oil = matrix(, 15, simulation.size2)
-for (i in 1:nrow(df2) ) {
-  oil.price <- rtriangle(simulation.size2, a=df2$`Low Oil Price`[i], b=df2$`High Oil Price`[i], c=df2$`AEO2018 Reference`[i])
-  oil[i,] = oil.price
+for (j in 1:10000){
+  for (i in 1:nrow(df2) ) {
+    oil.price <- rtriangle(simulation.size, a=df2$`Low Oil Price`[i], b=df2$`High Oil Price`[i], c=df2$`AEO2018 Reference`[i])
+    oil[i,j] = oil.price
+  }
 }
 head(oil)
 final_year = colSums(oil)
@@ -292,15 +324,8 @@ for (i in 1:10000) {
 Annual_Rev = oil*ann.prod # Annual Revenue as a distribution
 dim(Annual_Rev)
 Annual_Rev[1:15,1:15]
-test = Annual_Rev[1,]
-hist(test)
-median(test)
-mean(test)
 Dil.Rev = Annual_Rev*NRI # Diluted Revenue as a distribution
-test = colSums(Dil.Rev)
-hist(test)
-mean(test)
-ann.prod[1:15,1:10]
+Dil.Rev[1:15,1:10]
 # Operating costs per barrel 
 # The expenses would be the same for every well in a given year,
 # but could change from year to year with this distribution
@@ -339,25 +364,23 @@ FNR[1:15,1:10]
 # #--------------------------------------#
 
 # need to fix each cost to be a distribution
-df_init_costs = matrix(0,15,10000)
-for (j in 1:10000) {
-  for (i in 1:15){
-    acre.costs <- rnorm(simulation.size, mean=600, sd=50)*price.p.acre
-    seismic.costs <- rnorm(simulation.size, mean=3, sd=0.35)*price.p.sec
-    completion.costs = rnorm(simulation.size, mean=390000, sd=50000)
-    drilling = P2019k[runif(simulation.size,1,10000)]*1000
-    df_init_costs[i,j] = sum(acre.costs, seismic.costs, completion.costs, drilling)
-  }
+df_init_costs = rep(0,10)
+for (j in 1:10) {
+  acre.costs <- rnorm(simulation.size, mean=600, sd=50)*price.p.acre
+  seismic.costs <- rnorm(simulation.size, mean=3, sd=0.35)*price.p.sec
+  completion.costs = rnorm(simulation.size, mean=390000, sd=50000)
+  drilling = P2019k[runif(simulation.size,1,10000)]*1000
+  print(drilling)
+  df_init_costs[j] = sum(acre.costs, seismic.costs, completion.costs, drilling)
 }
 
-init_costs[1:15,1:10]
+df_init_costs[1:10]
 
 # weighted average cost of capital (constant)
 
 
 ### NET PRESENT VALUE ###
 df_total = matrix(0,15,10000)
-df_total[1,1]
 
 # define WACC function
 WACC = NULL
@@ -371,15 +394,9 @@ for (i in 1:nrow(FNR)) {
   df_total[i,] = FNR[i,]/WACC[i]
 }
 
-
-dim(df_total)
-df_total[2,1]
-df_total[1:15,1:10]
-NPV_year = df_total - df_init_costs
-initcosts_y15 = colSums(df_init_costs)
-year15 = colSums(df_total)#sum to get year 15
-year15[1:10]
-
-
+year15 = colSums(df_total)
+NPV = year15 - df_init_costs
+NPV
 hist(NPV, breaks=50)
 median(NPV)
+mean(NPV)

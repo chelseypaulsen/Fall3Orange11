@@ -448,7 +448,7 @@ for cluster in np.unique(y_kmeans2):
 plt.clf()
 
 # list ordering terms based on density plot above
-loc_clust_names = ['Loc Cluster 1', 'Loc Cluster 2', 'Loc Cluster 3', 'Loc Cluster 4', 'Loc Cluster 5']
+loc_clust_names = ['Fenway', 'Mid-range', 'Outskirts', 'East & South Boston', 'North End & Beacon Hill']
 # 5= North End/Beacon Hill (orange)
 # 4= East and south Boston (purple)
 # 3= Outskirts (green)
@@ -511,7 +511,7 @@ def save_pivots(df):
     # TODO Revenue per bed
 
     # output Pivots table to some sexy csv
-    writer = pd.ExcelWriter('pivots.xlsx')
+    writer = pd.ExcelWriter(os.path.join(os.getcwd(), 'results', 'pivots.xlsx'))
     pivot_count.to_excel(writer, 'Count')
     pivot_price.to_excel(writer,'Price')
     pivot_avail30.to_excel(writer,'30-Day Avail.')
@@ -552,14 +552,14 @@ for point in range(0, len(locationlist)):
     folium.CircleMarker(locationlist[point], radius=2, color=list_clust['icon color'].iloc[point]).add_to(boston)
 for point2 in range(0,len(attractionslist)):
     folium.Marker(attractionslist[point2], popup=attractions.iloc[point2]['Name'], icon=folium.Icon(color='gray', icon='star')).add_to(boston)
-boston.save(os.path.join(os.getcwd(), 'results', 'pinmap_clusters.html')) ## This requires a 'results' folder in your directory
+boston.save(os.path.join(os.getcwd(), 'results', 'attraction_clusters.html')) ## This requires a 'results' folder in your directory
 
 
 ###### VISUALIZING HEATMAP ######
 # used https://alcidanalytics.com/p/geographic-heatmap-in-python as guide
 
 # basemap, can use this to reset the basemap, prior to adding new info
-boston = folium.Map(location=[42.35, -71.06], zoom_start=12, )
+#boston = folium.Map(location=[42.35, -71.06], zoom_start=12, )
 
 # Plotting price heat map
 boston = folium.Map(location=[42.35, -71.06], zoom_start=12, )
@@ -572,7 +572,7 @@ hm_price = HeatMap( list(zip(list_clust['latitude'], list_clust['longitude'], li
 hm_price.layer_name = 'Price'
 boston.add_child(hm_price)
 
-boston.save(os.path.join(os.getcwd(), 'results', 'heatmap_price.html')) ## This requires a 'results' folder in your directory
+boston.save(os.path.join(os.getcwd(), 'results', 'price.html')) ## This requires a 'results' folder in your directory
 
 # Plotting inverse sentiment heat map
 boston = folium.Map(location=[42.35, -71.06], zoom_start=12, )
@@ -584,7 +584,7 @@ hm_invsent = HeatMap( list(zip(list_clust['latitude'], list_clust['longitude'], 
                  )
 hm_invsent.layer_name = 'Negative Review Sentiment'
 boston.add_child(hm_invsent)
-boston.save(os.path.join(os.getcwd(), 'results', 'invsent_n_pins.html')) ## This requires a 'results' folder in your directory
+boston.save(os.path.join(os.getcwd(), 'results', 'negative_sentiment.html')) ## This requires a 'results' folder in your directory
 
 revenue_temp = list_clust[['latitude', 'longitude', 'booked_rev30']].dropna()
 revenue_temp['booked_rev30'] = revenue_temp['booked_rev30'].round(1)
@@ -597,10 +597,9 @@ hm_rev = HeatMap(list(zip(revenue_temp['latitude'].values, revenue_temp['longitu
                  )
 hm_rev.layer_name = '30-day Booked Revenue'
 boston.add_child(hm_rev)
-boston.save(os.path.join(os.getcwd(), 'results', 'heatmap_rev.html')) ## This requires a 'results' folder in your directory
+boston.save(os.path.join(os.getcwd(), 'results', '30day revenue.html')) ## This requires a 'results' folder in your directory
 
-folium.LayerControl().add_to(boston)
-boston.save(os.path.join(os.getcwd(), 'results', 'Boston_AirBNB.html'))
 
 print("Maps generated. \n")
 
+print("Analysis Complete. \n")

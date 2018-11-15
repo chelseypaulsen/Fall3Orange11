@@ -4,20 +4,20 @@ import pandas as pd
 import os
 import re
 import numpy as np
-import gmplot
 import pickle as pkl
 import datetime as dt
 from sklearn.decomposition import pca
 
 pd.set_option('display.max_columns', 10)
-os.chdir("C:/Users/Steven/Documents/MSA/Analytics Foundations/Clustering/data/")
+
+os.chdir("C:/Users/Steven/Documents/MSA/Analytics Foundations/Clustering/data/project 1")
 # os.chdir("C:/Users/derri/Documents/NC State Classes/Clustering/Clustering/boston-airbnb-open-data")
 
 # import these sexy files
-listings = pd.read_csv('listings.csv')
-calendar = pd.read_csv('calendar.csv')
-reviews = pd.read_csv('reviews.csv')
-attractions = pd.read_excel('Top Attractions.xlsx')
+listings = pd.read_csv(os.path.join(os.getcwd(), 'data', 'listings.csv'))
+calendar = pd.read_csv(os.path.join(os.getcwd(), 'data', 'calendar.csv'))
+reviews = pd.read_csv(os.path.join(os.getcwd(), 'data', 'reviews.csv'))
+attractions = pd.read_excel(os.path.join(os.getcwd(), 'data', 'Top Attractions.xlsx'))
 
 def initial_cleaning(cal, listings, revs):
     """
@@ -39,18 +39,16 @@ def initial_cleaning(cal, listings, revs):
 
     # note strong disagreement on b/w these two columns
     listings[['neighbourhood', 'neighbourhood_cleansed']].tail(20)
-    listings.info()
+    # listings.info()
     listings['price'] = listings['price'].replace('[\$,]', '', regex=True).astype(float)
     listings = listings.set_index('id')
 
     revs.shape[0] == reviews.id.unique().shape[0]  # confirming this id column is unique to each ID
     revs.shape[0] - reviews.comments.count()  # 53 NaN reviews, which are replaced with '' later in sentiment extraction
 
-    # TODO detect language and remove non-english
     # from langdetect import detect # encountered "runtime error" with this
     # reviews['lang'] = reviews['comments'].apply(lambda x: detect(x)) This didn't work: RunTimeError
 
-    # TODO remove ("automatically generated" reviews)
 
     return cal, listings
 
@@ -169,9 +167,10 @@ def amenity_exp(row):
 
 
 listings = listings.apply(amenity_exp, axis=1)
+print("Amenities expanded into individual columns of listings. \n")
 #list_clust = list_clust.apply(amenity_exp, axis=1)
 
-pkl.dump(listings, open(os.path.join('pickles', 'listings_cln'), "wb"))
+# pkl.dump(listings, open(os.path.join('pickles', 'listings_cln'), "wb"))
 # listings = pkl.load(open(os.path.join('pickles', 'listings_cln'), "rb"))
 
 
@@ -315,8 +314,9 @@ def dist_calcs(df):
 
 
 listings_dist = dist_calcs(listings)
+print("Distnces to attractions calculated. \n")
 
-pkl.dump(listings_dist, open(os.path.join('pickles', 'listings_dist'), "wb"))
+# pkl.dump(listings_dist, open(os.path.join('pickles', 'listings_dist'), "wb"))
 # listings = pkl.load(open(os.path.join('pickles', 'listings_dist'), "rb"))
 
 
@@ -338,8 +338,6 @@ def sentiment_extr(revs):
 
     # TODO Alternate sentiment extraction method for each word, possibly textblob?
 
-    # TODO Find unique words from each sentiment group
-
     revs[revs['compound'] == 0]  # whats in those neutral reviews
     reviews_informative = revs[revs['compound'] != 0] # Assume all exact zero reviews are uninformative
     reviews_informative = reviews_informative.drop(columns=['comments'])
@@ -352,8 +350,8 @@ def sentiment_extr(revs):
 
 
 reviews = sentiment_extr(reviews)
-
-pkl.dump(reviews, open(os.path.join('pickles', 'reviews_sent'), "wb"))
+print("Sentiment extracted from reviews. \n")
+# pkl.dump(reviews, open(os.path.join('pickles', 'reviews_sent'), "wb"))
 # reviews = pkl.load(open(os.path.join('pickles', 'reviews_sent'), "rb"))
 
 # aggregating by listing and then flattening the resulting multi-index
@@ -376,8 +374,8 @@ list_clust = listing10 # selection of prepared df for clustering
 from sklearn.cluster import KMeans
 
 kmeans = KMeans(n_clusters=5, random_state=8)
-sent_temp = list_clust[['compound mean', 'compound std']]  # TODO Should we normalize these?
-# list_temp = listing_clust[['','','',]] # TODO Should use other metrics for clustering too
+sent_temp = list_clust[['compound mean', 'compound std']]
+# list_temp = listing_clust[['','','',]]
 
 kmeans.fit(sent_temp.dropna())
 y_kmeans = kmeans.predict(sent_temp)
@@ -415,10 +413,12 @@ for lh in leg.legendHandles:
     lh.set_alpha(.7)
 plt.clf()
 
-list_clust['sent_clust'].value_counts()
+# list_clust['sent_clust'].value_counts()
 
-pkl.dump(list_clust, open(os.path.join('pickles', 'list_sent_clust'), "wb"))
-#list_clust = pkl.load(open(os.path.join('pickles', 'list_sent_clust'), "rb"))
+print("Sentiment clusters calculated. \n")
+
+# pkl.dump(list_clust, open(os.path.join('pickles', 'list_sent_clust'), "wb"))
+# list_clust = pkl.load(open(os.path.join('pickles', 'list_sent_clust'), "rb"))
 
 ########## CLUSTERING GEORGAPHY ###########
 dist_cols = [col for col in listings.columns if '_dist' in col]
@@ -429,12 +429,14 @@ listings_nhd = listings.groupby(by="neighbourhood_cleansed")[cols].agg('mean')
 
 kmeans = KMeans(n_clusters=5, random_state=8)
 
-loc_temp = list_clust[dist_cols]  # TODO Should we normalize these???
+loc_temp = list_clust[dist_cols]
 kmeans.fit(loc_temp.dropna())
 y_kmeans2 = kmeans.predict(loc_temp)
 list_clust['loc_kmeans'] = y_kmeans2
 
-pkl.dump(list_clust, open(os.path.join('pickles', 'list_loc_clust'), "wb"))
+print("Geography clusters calculated. \n")
+
+# pkl.dump(list_clust, open(os.path.join('pickles', 'list_loc_clust'), "wb"))
 #list_clust = pkl.load(open(os.path.join('pickles', 'list_loc_clust'), "rb"))
 
 
@@ -447,6 +449,12 @@ plt.clf()
 
 # list ordering terms based on density plot above
 loc_clust_names = ['Loc Cluster 1', 'Loc Cluster 2', 'Loc Cluster 3', 'Loc Cluster 4', 'Loc Cluster 5']
+# 5= North End/Beacon Hill (orange)
+# 4= East and south Boston (purple)
+# 3= Outskirts (green)
+# 2= Mid-range (blue)
+# 1= Fenway
+
 list_clust['loc_clust'] = list_clust['loc_kmeans'].apply(lambda x: loc_clust_names[x])
 
 # Plot showing resulting (from mean sentiment scores and sentiment variability)
@@ -516,6 +524,8 @@ def save_pivots(df):
 
 save_pivots(list_clust)
 
+print("Pivot tables generated. \n")
+
 ###### VISUALIZING PIN MAP ######
 # Used https://georgetsilva.github.io/posts/mapping-points-with-folium/ as guide
 
@@ -542,7 +552,7 @@ for point in range(0, len(locationlist)):
     folium.CircleMarker(locationlist[point], radius=2, color=list_clust['icon color'].iloc[point]).add_to(boston)
 for point2 in range(0,len(attractionslist)):
     folium.Marker(attractionslist[point2], popup=attractions.iloc[point2]['Name'], icon=folium.Icon(color='gray', icon='star')).add_to(boston)
-boston.save(os.path.join(os.getcwd(), 'results','pinmap_clusters2.html')) ## This requires a 'results' folder in your directory
+boston.save(os.path.join(os.getcwd(), 'results', 'pinmap_clusters.html')) ## This requires a 'results' folder in your directory
 
 
 ###### VISUALIZING HEATMAP ######
@@ -592,9 +602,5 @@ boston.save(os.path.join(os.getcwd(), 'results', 'heatmap_rev.html')) ## This re
 folium.LayerControl().add_to(boston)
 boston.save(os.path.join(os.getcwd(), 'results', 'Boston_AirBNB.html'))
 
-
-# TODO Identify distinguishing features b/w positive and negative reviews
-# TODO Visualize some of the summary tables
-
-
+print("Maps generated. \n")
 

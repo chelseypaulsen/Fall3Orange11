@@ -86,8 +86,8 @@ Density.Pt <- density(Pt, bw="SJ-ste")
 # h=104.6
 
 # Multiple Input Probability Distributions #
-P2019k <- rep(0,100000)
-for(i in 1:100000){
+P2019k <- rep(0,10000)
+for(i in 1:10000){
   P2006 <- mean(c(2238.6, 1936.2, 2664.6)) 
   r <- sample(Est.data, 1)
   Pt <- P2006*(1 + r)
@@ -192,7 +192,7 @@ median(dry_well)
 ####### IP= Initial production rate at time zero, with Lognormal dist, HINT in HW doc
 simulation.size2 = 10000
 IP <- rlnorm(simulation.size2, meanlog = 6, sdlog = .28)
-
+IP
 
 ####### Rate of decline is Uniformly distributed b/w 15 and 32 percent
 # YE = Year End | YB = Year Beginning
@@ -204,53 +204,60 @@ U <- t(chol(R)) #choleski function
 
 # IP standarize # Mean = 420, sd = 120
 standardize_IP <- function(x){
-  ip.std = (x - 420)/120
+  ip.std = (x - mean(x))/sd(x)
   return(ip.std)
 }
 
 destandardize_IP <- function(ip.std, x){
-  ip.old = (ip.std * 120) + 420
+  ip.old = (ip.std * sd(x)) + mean(x)
   return(ip.old)
 }
 
 # decline.rate standardize # Mean unif = (a+b)/2 | Variance = ((b-a)^2)/12
 standardize_DR <- function(x){
-  dr.std = (x - 23.5)/4.907
+  dr.std = (x - mean(x))/sd(x)
   return(dr.std)
 }
 
 destandardize_DR <- function(dr.std, x){
-  dr.old = (dr.std * 4.907) + 23.5
+  dr.old = (dr.std * sd(x)) + mean(x)
   return(dr.old)
 }
 
 # Actually correlate
-Both.r <- cbind(standardize_IP(IP), standardize_DR(decline.rate))
+Both.r <- cbind(standardize_DR(decline.rate), standardize_IP(IP))
 SB.r <- U %*% t(Both.r) # they become correlated multiplies in correlation structure # U is cholseki
 SB.r <- t(SB.r) # t() = transpose # put it back in the normal form
 
-final.SB.r <- cbind(destandardize_IP(SB.r[,1], S.r), destandardize_DR(SB.r[,2], B.r))
-final.SB.r
+# Lead with the uniform distribution
 
-df_oil_vol = matrix(, 15, simulation.size2)
-for (i in 1:15){
-  if (i == 1) {
-    rate_YB = IP
-    rate_YE=(1-decline.rate)*rate_YB  
-    oil_vol = 365*(rate_YB+rate_YE)/2
-    print(rate_YE)
-  } else {
-    rate_YB= rate_YE
-    rate_YE=(1-decline.rate)*rate_YB  
-    oil_vol = 365*(rate_YB+rate_YE)/2
-    print(rate_YE)
+final.SB.r <- cbind(destandardize_DR(SB.r[,1], S.r), destandardize_IP(SB.r[,2], B.r))
+head(final.SB.r)
+dim(final.SB.r)
+
+df_oil_vol = matrix(0, 15, simulation.size2)
+for (j in 1:10000){
+  for (i in 1:15){
+    if (i == 1) {
+      rate_YB = final.SB.r[j,2]
+      rate_YE=(1-final.SB.r[j,1])*rate_YB
+      oil_vol = 365*(rate_YB+rate_YE)/2
+    } else {
+      rate_YB= rate_YE
+      rate_YE=(1-final.SB.r[j,1])*rate_YB
+      oil_vol = 365*(rate_YB+rate_YE)/2
+    }
+    df_oil_vol[i,j] = oil_vol
   }
-  df_oil_vol[i,] = oil_vol
 }
-dim(df_oil_vol)
+df_oil_vol[1:15,1:10]
+hist(unlist(df_oil_vol))
 ann.prod = df_oil_vol
+ann.prod
 dim(ann.prod)
-
+test = ann.prod[1,]
+hist(test)
+median(test)
 # Make for loop for calculating the equations
 #--------------------------------------#
 ############# Revenue Risk ##########
@@ -269,7 +276,7 @@ for (i in 1:nrow(df2) ) {
   oil.price <- rtriangle(simulation.size2, a=df2$`Low Oil Price`[i], b=df2$`High Oil Price`[i], c=df2$`AEO2018 Reference`[i])
   oil[i,] = oil.price
 }
-
+head(oil)
 final_year = colSums(oil)
 hist(final_year, breaks=50, col = 'cornflowerblue', main='Oil Price Normal Approximation for 2019-2033')#, xlab='2019 Cost (Thousand Dollars)')
 
@@ -277,42 +284,60 @@ hist(final_year, breaks=50, col = 'cornflowerblue', main='Oil Price Normal Appro
 ######## Net Revenue Interest ########
 # annual revenues before the royalty payments are simply (Oil Price X Annual Production)
 # This calculation is done per well for the entire life of the well.
-NRI = rnorm(simulation.size, mean=0.75, sd=0.02)
-NRI
+NRI = matrix(, 15, simulation.size2)
+for (i in 1:10000) {
+  NRI[,i] = rnorm(simulation.size, mean=0.75, sd=0.02)
+}
+
 Annual_Rev = oil*ann.prod # Annual Revenue as a distribution
+dim(Annual_Rev)
+Annual_Rev[1:15,1:15]
+test = Annual_Rev[1,]
+hist(test)
+median(test)
+mean(test)
 Dil.Rev = Annual_Rev*NRI # Diluted Revenue as a dsitribution
-
-
+test = colSums(Dil.Rev)
+hist(test)
+mean(test)
+ann.prod[1:15,1:10]
 # Operating costs per barrel 
 # The expenses would be the same for every well in a given year,
 # but could change from year to year with this distribution
 # assign the distribution of operational costs
-OperationCost = matrix(,15,10000)
-for (i in 1:15){
-  op.costs = rnorm(n=1, mean=2.25, sd=0.3)
-  OperationCost[i,] = ann.prod[i,]*op.costs
-  print(op.costs)
+
+OperationCost = matrix(0,15,10000) 
+#Didnt have the outside loop
+for (j in 1:10000) {
+  for (i in 1:15){
+    op.costs = rnorm(n=1, mean=2.25, sd=0.3)
+    OperationCost[i,j] = ann.prod[i,j]*op.costs
+  }
 }
 dim(OperationCost)
+OperationCost[1:15,1:10]
+hist(OperationCost[15,])
 
-# Calculating the Professional Overhead
+# Calculating the Professional Overhead # change for 10000
 prof.overhead = rtriangle(n=1, a=172000, b=279500, c=215000)
 PO = rep(0, 15 )
 for (i in 0:15){
   if (i == 0) {
     ProfOverhead_Year0 <- prof.overhead*(1)
   } else {
-    PO[i] <- prof.overhead*(1+i)
+    PO[i] <- prof.overhead*(1+i)r
   }
 }
-
+PO[1:15]
 # Replicate PO to have 10000 columns for #MatrixMath
 df_PO = replicate(10000, PO)
 dim(df_PO)
+df_PO[1:15,1:10]
+
 FNR = ((Dil.Rev - OperationCost - df_PO)*(1-.046)) #0.046 = Severance Tax
 dim(FNR)  
 
-FNR[1,1]
+FNR[1:15,1:10]
 # #--------------------------------------#
 # ############# Net Present Value Calculation ##########
 # #--------------------------------------#
@@ -330,11 +355,7 @@ WACC = NULL
 for (i in 1:15) {
   WACC = rbind(WACC, (1+.1)^i)
 }
-dim(WACC)
-FNR[1,1]
-FNR[1,2]
-FNR[2,1]
-test[1,1]
+
 
 # apply WACC factor onto the FNR
 for (i in 1:nrow(FNR)) {
@@ -345,10 +366,12 @@ for (i in 1:nrow(FNR)) {
 init.costs
 dim(df_total)
 df_total[2,1]
-year15 = colSums(df_total) #sum to get year 15
+df_total[1:15,1:10]
+year15 = colSums(df_total)#sum to get year 15
+year15[1:10]
 NPV = year15 - init.costs
 init.costs
-year15[1]
+
 NPV[2] == year15[2] - init.costs # checks to make sure it works!
 
 hist(NPV, breaks=50)

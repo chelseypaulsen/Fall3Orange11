@@ -153,28 +153,36 @@ seismic.costs <- rnorm(simulation.size, mean=3, sd=0.35)*price.p.sec
 
 ###### Completion Costs #######
 # completion.costs <- rnorm(simulation.size, mean=390000, sd=50000)
-well_type = 'wet' # checked for 'wet' and 'dry'
-# Determine well logic (wet or dry)
-if (well_type == 'wet') {
-  completion.costs = rnorm(simulation.size, mean=390000, sd=50000)
-} else {
-  completion.costs = 0
-}
+completion.costs = rnorm(simulation.size, mean=390000, sd=50000)
+
 
 ###### Professional Overhead #######
 # salary and benefit cost is best represented by a triangular distribution: 
 # Need to incorporate how to determine it being different for different wells
-num.years = 0
-if (num.years == 0) {
-  prof.overhead <- rtriangle(simulation.size, a=172000, b=279500, c=215000)*(1)
-} else {
-  prof.overhead <- rtriangle(simulation.size, a=172000, b=279500, c=215000)*(1+num.years)
-}
+
+prof.overhead <- rtriangle(simulation.size, a=172000, b=279500, c=215000)
+
+
+# Drilling Costs # No Clue
+drilling = P2019k[runif(simulation.size,1,10000)]*1000
 
 # Sum for total "Year 0 Expenses" = init.costs
-init.costs <- acre.costs + seismic.costs + completion.costs
+init.costs <- acre.costs + seismic.costs + completion.costs + prof.overhead + drilling
 init.costs
 
+# Build Dry well Distribution
+dry_well = rep(0,10000)
+for (i in 1:10000){
+  acre.costs <- rnorm(simulation.size, mean=600, sd=50)*price.p.acre
+  seismic.costs <- rnorm(simulation.size, mean=3, sd=0.35)*price.p.sec
+  prof.overhead <- rtriangle(simulation.size, a=172000, b=279500, c=215000)
+  drilling = P2019k[runif(simulation.size,1,10000)]*1000
+  dry_well[i] = acre.costs + seismic.costs  + prof.overhead + drilling
+}
+hist(dry_well, breaks=50)
+median(dry_well)
+
+# Costs Histogram needs to include acre, seismic, overhead, drilling distributions
 
 
 #--------------------------------------#
@@ -275,22 +283,6 @@ Annual_Rev = oil*ann.prod # Annual Revenue as a distribution
 Dil.Rev = Annual_Rev*NRI # Diluted Revenue as a dsitribution
 
 
-# need a dataframe with columns: year, oil price, and oil_vol (for each year)
-# df_annual = data.frame(matrix(ncol=3, nrow=15))
-# df_annual = df_annual %>%
-#   mutate(Year = seq(1,15)) %>%
-#   mutate(Oil.Price = rowMeans(oil)) %>%
-#   mutate(Ann.Prod = rowMeans(df_oil_vol)) %>%
-#   mutate(Annual.Rev = Oil.Price*Ann.Prod) %>%
-#   mutate(Dil.Rev = Annual.Rev*NRI) %>%
-#   select(Year, Oil.Price, Ann.Prod, Annual.Rev, Dil.Rev)
-# View(df_annual)
-
-
-#--------------------------------------#
-############# Operating Expenses ##########
-#--------------------------------------#
-
 # Operating costs per barrel 
 # The expenses would be the same for every well in a given year,
 # but could change from year to year with this distribution
@@ -320,26 +312,44 @@ dim(df_PO)
 FNR = ((Dil.Rev - OperationCost - df_PO)*(1-.046)) #0.046 = Severance Tax
 dim(FNR)  
 
+FNR[1,1]
 # #--------------------------------------#
 # ############# Net Present Value Calculation ##########
 # #--------------------------------------#
-init.costs = acre.costs + seismic.costs + completion.costs + ProfOverhead_Year0
+init.costs = acre.costs + seismic.costs + completion.costs + ProfOverhead_Year0 + drilling
 
 # weighted average cost of capital (constant)
-wacc <- 0.1 # Constant every year
-denom <- (1 + wacc)
 
 
 ### NET PRESENT VALUE ###
 df_total = matrix(0,15,10000)
 df_total[1,1]
-for (i in 1:nrow(FNR)){
-  total = (FNR[i]/denom^i)
-  df_total = df_total + total
+
+# define WACC function
+WACC = NULL
+for (i in 1:15) {
+  WACC = rbind(WACC, (1+.1)^i)
+}
+dim(WACC)
+FNR[1,1]
+FNR[1,2]
+FNR[2,1]
+test[1,1]
+
+# apply WACC factor onto the FNR
+for (i in 1:nrow(FNR)) {
+  df_total[i,] = FNR[i,]/WACC[i]
 }
 
-dim(df_total)
-df_total[1,1] # Check to see if multi by 1000
-NPV = df_total[15,:]
-dim(NPV)
 
+init.costs
+dim(df_total)
+df_total[2,1]
+year15 = colSums(df_total) #sum to get year 15
+NPV = year15 - init.costs
+init.costs
+year15[1]
+NPV[2] == year15[2] - init.costs # checks to make sure it works!
+
+hist(NPV, breaks=50)
+median(NPV)

@@ -181,6 +181,11 @@ for (i in 1:10000){
 hist(dry_well, breaks=50)
 median(dry_well)
 
+hist(dry_well, breaks=50, col = 'cornflowerblue', main='Distribution of Cost for a Dry Well', xlab='Cost (Dollars)')
+
+abline(v = median(dry_well) , col="darkorange3", lwd=2)
+mtext("Median", at=median(dry_well)+400 , col="darkorange3")
+
 # Costs Histogram needs to include acre, seismic, overhead, drilling distributions
 
 
@@ -397,6 +402,12 @@ for (i in 1:nrow(FNR)) {
 year15 = colSums(df_total)
 NPV = year15 - df_init_costs
 NPV
-hist(NPV, breaks=50)
 median(NPV)
 mean(NPV)
+
+# Make Histogram
+hist(NPV, breaks=50, col = 'cornflowerblue', main='Distribution of Simulated Predicted Net Present Values for years 2019 to 2033', xlab='Net Present Value (Dollars)')
+
+abline(v = median(NPV) , col="darkorange3", lwd=2)
+mtext("Median", at=median(NPV)+400 , col="darkorange3")
+

@@ -134,3 +134,106 @@ select 	count(ID) as Count
 from Survival.Katrina3
 where reason in (1, 3, 4)
 ; quit;
+
+
+/*Creating a base table that we will use to join to the main
+ and create the final table. Basically we are looking to make
+a row for each hour for each ID so 48 rows for every ID value*/
+data test (drop = i j);
+	do i = 1 to 770;
+	ID = i;
+	output;
+		do j = 1 to 48;
+		Start = j - 1;
+		Stop = Start + 1;
+		output;
+		end;
+	end;
+run;
+
+
+/*Here we are deleting the unwantedrows created from the*/
+/*previous do loop*/
+data test2;
+	set test;
+	if Start = . or Start = 49 then delete;
+run;
+
+/*Lastly, we are deleting the weird row that start*/
+/*each ID with the interation values from the previous */
+/*iteration. Now sure why SAS does this but im just deleting*/
+/*it because it isn't needed*/
+data test3;
+	set test2;
+	by ID;
+	if first.ID and Start = 47 and Stop = 48 then delete;
+run;
+
+/*Matching the new base table with the real data*/
+proc sql;
+create table survival.katrina5 as 
+Select
+	A.*,
+	B.*
+From 
+	Test3 as A left join survival.katrina4 as b
+		on (A.ID = B.ID)
+; quit;
+
+/*Sorting to make it easier to follow*/
+proc sort data = survival.katrina5;
+	by ID Start;
+run;
+
+/*Creating an Over Worked indicator that we will use in the survival*/
+/*analysis that basically indicates if a pump has be running for the */
+/*previous 12 hours*/
+data survival.katrina_final;
+	set survival.katrina5;
+	if Start = 12 and Stop = 13 and Running_13 = 1 then Over_Worked = 1;
+	else if Start = 13 and Stop = 14 and Running_14 = 1 then Over_Worked = 1;
+	else if Start = 14 and Stop = 15 and Running_15 = 1 then Over_Worked = 1;
+	else if Start = 15 and Stop = 16 and Running_16 = 1 then Over_Worked = 1;
+	else if Start = 16 and Stop = 17 and Running_17 = 1 then Over_Worked = 1;
+	else if Start = 17 and Stop = 18 and Running_18 = 1 then Over_Worked = 1;
+	else if Start = 18 and Stop = 19 and Running_19 = 1 then Over_Worked = 1;
+	else if Start = 19 and Stop = 20 and Running_20 = 1 then Over_Worked = 1;
+	else if Start = 20 and Stop = 21 and Running_21 = 1 then Over_Worked = 1;
+	else if Start = 21 and Stop = 22 and Running_22 = 1 then Over_Worked = 1;
+	else if Start = 22 and Stop = 23 and Running_23 = 1 then Over_Worked = 1;
+	else if Start = 23 and Stop = 24 and Running_24 = 1 then Over_Worked = 1;
+	else if Start = 24 and Stop = 25 and Running_25 = 1 then Over_Worked = 1;
+	else if Start = 25 and Stop = 26 and Running_26 = 1 then Over_Worked = 1;
+	else if Start = 26 and Stop = 27 and Running_27 = 1 then Over_Worked = 1;
+	else if Start = 27 and Stop = 28 and Running_28 = 1 then Over_Worked = 1;
+	else if Start = 28 and Stop = 29 and Running_29 = 1 then Over_Worked = 1;
+	else if Start = 29 and Stop = 30 and Running_30 = 1 then Over_Worked = 1;
+	else if Start = 30 and Stop = 31 and Running_31 = 1 then Over_Worked = 1;
+	else if Start = 31 and Stop = 32 and Running_32 = 1 then Over_Worked = 1;
+	else if Start = 32 and Stop = 33 and Running_33 = 1 then Over_Worked = 1;
+	else if Start = 33 and Stop = 34 and Running_34 = 1 then Over_Worked = 1;
+	else if Start = 34 and Stop = 35 and Running_35 = 1 then Over_Worked = 1;
+	else if Start = 35 and Stop = 36 and Running_36 = 1 then Over_Worked = 1;
+	else if Start = 36 and Stop = 37 and Running_37 = 1 then Over_Worked = 1;
+	else if Start = 37 and Stop = 38 and Running_38 = 1 then Over_Worked = 1;
+	else if Start = 38 and Stop = 39 and Running_39 = 1 then Over_Worked = 1;
+	else if Start = 39 and Stop = 40 and Running_40 = 1 then Over_Worked = 1;
+	else if Start = 40 and Stop = 41 and Running_41 = 1 then Over_Worked = 1;
+	else if Start = 41 and Stop = 42 and Running_42 = 1 then Over_Worked = 1;
+	else if Start = 42 and Stop = 43 and Running_43 = 1 then Over_Worked = 1;
+	else if Start = 43 and Stop = 44 and Running_44 = 1 then Over_Worked = 1;
+	else if Start = 44 and Stop = 45 and Running_45 = 1 then Over_Worked = 1;
+	else if Start = 45 and Stop = 46 and Running_46 = 1 then Over_Worked = 1;
+	else if Start = 46 and Stop = 47 and Running_47 = 1 then Over_Worked = 1;
+	else if Start = 47 and Stop = 48 and Running_48 = 1 then Over_Worked = 1;
+	else if Start < 12 then Over_Worked = .;
+	else Over_Worked = 0;
+run;
+
+/*Export to Excel in your path set above*/
+proc export 
+  data=survival.Katrina_Final 
+  dbms=xlsx 
+  outfile="&path.\over_worked_pumps.xlsx" 
+  replace;
+run;

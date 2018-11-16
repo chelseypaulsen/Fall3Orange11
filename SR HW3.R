@@ -5,10 +5,18 @@
 #       Orange 11          #
 #                          #
 #--------------------------#
-
+install.packages('truncnorm')
+install.packages('Rlab')
+library(dplyr)
 library(truncnorm)
 library(Rlab)
+library(graphics)
+library(quantmod)
+library(TTR)
+library(ks)
+library(scales)
 
+set.seed(112233)
 #dist for hydrocarbons
 hydrocarbons = rtruncnorm(100000, a=0, b=1, mean = .9, sd = .05)
 hist(hydrocarbons)
@@ -17,7 +25,7 @@ hist(hydrocarbons)
 reservoir = rtruncnorm(100000, a=0, b=1, mean = .8, sd = .1)
 hist(reservoir)
 
-#dist of the probability of sucess
+#dist of the probability of success
 prob_of_sucess = hydrocarbons*reservoir
 hist(prob_of_sucess)
 
@@ -40,8 +48,19 @@ for(j in 1:10000){
   prop_wet_wells[j] = num_wet_wells[j]/planned_wells
 }
 hist(prop_wet_wells)
+results
+sucess
+prop_wet_wells
+
+# Calculate 5% VaR
+VaR.percentile = .05
+VaR <- quantile(prop_wet_wells, VaR.percentile, na.rm=TRUE)
 
 
+# Calcuate 5% ES (CVaR)
+# Mean of values below the VaR
+bottom5 = prop_wet_wells[prop_wet_wells < VaR]
+ES = mean(bottom5, na.rm=TRUE)
 
-
-
+# Print Var and ES
+print(paste('VaR:',VaR,'ES:',ES))

@@ -14,7 +14,7 @@ RUN;
 %import_data(file=katrina, sheet=katrina)
 
 /*Add a ID Variable*/
-data Survival.Katrina2;
+data Katrina2;
 	length ID 4;
 	set Survival.Katrina;
 	ID + 1;
@@ -62,8 +62,8 @@ run;
 pump was running before failure and outputs the result in 
 the variable hour_count_b4_fail*/
 
-data Survival.Katrina3;
-	set Survival.Katrina2;
+data Katrina3;
+	set Katrina2;
 	if hour=13 then hour_count_b4_fail = &_13.;
 	else if hour=14 then hour_count_b4_fail = &_14.;
 	else if hour=15 then hour_count_b4_fail = &_15.;
@@ -110,31 +110,71 @@ run;
 title "Motor Failures that had 12 Consecutive Hours runninng";
 proc sql;
 select count(ID) as Count
-from Survival.Katrina3
+from Katrina3
 where hour_count_b4_fail = 12 and reason = 2;
 ; quit;
 
 title "Total Motor Failures";
 proc sql;
 select count(ID) as Count
-from Survival.Katrina3
+from Katrina3
 where reason = 2;
 ; quit;
 
 title "Non Motor Failures that had 12 Consecutive Hours runninng";
 proc sql;
 select 	count(ID) as Count
-from Survival.Katrina3
+from Katrina3
 where hour_count_b4_fail = 12 and reason in (1, 3, 4);
 ; quit;
 
 title "Total Non Motor Failures";
 proc sql;
 select 	count(ID) as Count
-from Survival.Katrina3
+from Katrina3
 where reason in (1, 3, 4)
 ; quit;
 
+/*Create the Running Variables for each hour*/
+data katrina4;
+	set katrina3;
+	if &_13. = 12 then Running_13 = 1; else Running_13 = 0;
+	if &_14. = 12 then Running_14 = 1; else Running_14 = 0;
+	if &_15. = 12 then Running_15 = 1; else Running_15 = 0;
+	if &_16. = 12 then Running_16 = 1; else Running_16 = 0;
+	if &_17. = 12 then Running_17 = 1; else Running_17 = 0;
+	if &_18. = 12 then Running_18 = 1; else Running_18 = 0;
+	if &_19. = 12 then Running_19 = 1; else Running_19 = 0;
+	if &_20. = 12 then Running_20 = 1; else Running_20 = 0;
+	if &_21. = 12 then Running_21 = 1; else Running_21 = 0;
+	if &_22. = 12 then Running_22 = 1; else Running_22 = 0;
+	if &_23. = 12 then Running_23 = 1; else Running_23 = 0;
+	if &_24. = 12 then Running_24 = 1; else Running_24 = 0;
+	if &_25. = 12 then Running_25 = 1; else Running_25 = 0;
+	if &_26. = 12 then Running_26 = 1; else Running_26 = 0;
+	if &_27. = 12 then Running_27 = 1; else Running_27 = 0;
+	if &_28. = 12 then Running_28 = 1; else Running_28 = 0;
+	if &_29. = 12 then Running_29 = 1; else Running_29 = 0;
+	if &_30. = 12 then Running_30 = 1; else Running_30 = 0;
+	if &_31. = 12 then Running_31 = 1; else Running_31 = 0;
+	if &_32. = 12 then Running_32 = 1; else Running_32 = 0;
+	if &_33. = 12 then Running_33 = 1; else Running_33 = 0;
+	if &_34. = 12 then Running_34 = 1; else Running_34 = 0;
+	if &_35. = 12 then Running_35 = 1; else Running_35 = 0;
+	if &_36. = 12 then Running_36 = 1; else Running_36 = 0;
+	if &_37. = 12 then Running_37 = 1; else Running_37 = 0;
+	if &_38. = 12 then Running_38 = 1; else Running_38 = 0;
+	if &_39. = 12 then Running_39 = 1; else Running_39 = 0;
+	if &_40. = 12 then Running_40 = 1; else Running_40 = 0;
+	if &_41. = 12 then Running_41 = 1; else Running_41 = 0;
+	if &_42. = 12 then Running_42 = 1; else Running_42 = 0;
+	if &_43. = 12 then Running_43 = 1; else Running_43 = 0;
+	if &_44. = 12 then Running_44 = 1; else Running_44 = 0;
+	if &_45. = 12 then Running_45 = 1; else Running_45 = 0;
+	if &_46. = 12 then Running_46 = 1; else Running_46 = 0;
+	if &_47. = 12 then Running_47 = 1; else Running_47 = 0;
+	if &_48. = 12 then Running_48 = 1; else Running_48 = 0;
+run;
 
 /*Creating a base table that we will use to join to the main
  and create the final table. Basically we are looking to make
@@ -171,17 +211,17 @@ run;
 
 /*Matching the new base table with the real data*/
 proc sql;
-create table survival.katrina5 as 
+create table katrina5 as 
 Select
 	A.*,
 	B.*
 From 
-	Test3 as A left join survival.katrina4 as b
+	Test3 as A left join katrina4 as b
 		on (A.ID = B.ID)
 ; quit;
 
 /*Sorting to make it easier to follow*/
-proc sort data = survival.katrina5;
+proc sort data = katrina5;
 	by ID Start;
 run;
 
@@ -189,7 +229,7 @@ run;
 /*analysis that basically indicates if a pump has be running for the */
 /*previous 12 hours*/
 data survival.katrina_final;
-	set survival.katrina5;
+	set katrina5;
 	if Start = 12 and Stop = 13 and Running_13 = 1 then Over_Worked = 1;
 	else if Start = 13 and Stop = 14 and Running_14 = 1 then Over_Worked = 1;
 	else if Start = 14 and Stop = 15 and Running_15 = 1 then Over_Worked = 1;
@@ -228,12 +268,4 @@ data survival.katrina_final;
 	else if Start = 47 and Stop = 48 and Running_48 = 1 then Over_Worked = 1;
 	else if Start < 12 then Over_Worked = .;
 	else Over_Worked = 0;
-run;
-
-/*Export to Excel in your path set above*/
-proc export 
-  data=survival.Katrina_Final 
-  dbms=xlsx 
-  outfile="&path.\over_worked_pumps.xlsx" 
-  replace;
 run;

@@ -269,3 +269,10 @@ data survival.katrina_final;
 	else if Start < 12 then Over_Worked = .;
 	else Over_Worked = 0;
 run;
+
+proc export
+  data=survival.Katrina_Final 
+  dbms=xlsx 
+  outfile="&path.\over_worked_pumps.xlsx" 
+  replace;
+run;

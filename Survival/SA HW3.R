@@ -191,4 +191,12 @@ pull.n.clear <- function(df, id){
 clear.n.place <- function(df, id){
   
 }
+overrun = read.csv(file='C:\\Users\\Steven\\Documents\\MSA\\Analytics Foundations\\Survival\\data\\over_worked_pumps.csv')
+
+fit_cox2<- coxph(Surv(overrun$Start, overrun$Stop, event = overrun$reason %in% c(2,3)) ~ backup + bridgecrane + servo + trashrack + elevation +
+                  slope + age + Over_Worked, data = overrun)
+
+str(fit_cox2)
+summary(fit_cox2)
+exp(coef(fit_cox2))
 

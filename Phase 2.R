@@ -358,6 +358,7 @@ for(j in 1:10000){
 }
 PO[1:15,1:10]
 
+# Calculated FNR
 FNR = ((Dil.Rev - OperationCost - PO)*(1-.046)) #0.046 = Severance Tax
 dim(FNR)  
 PO[1:15,1:10]
@@ -399,6 +400,7 @@ for (i in 1:nrow(FNR)) {
   df_total[i,] = FNR[i,]/WACC[i]
 }
 
+# sum all years together for final NPV
 year15 = colSums(df_total)
 NPV = year15 - df_init_costs
 NPV

@@ -9,14 +9,13 @@ rm(list=ls()) #clears existing variables/functions from envi
 library(tidyverse)
 library(survival)
 library(survminer)
-library(flexsurv)
 library(dplyr)
 library(visreg)
 
 
 #katrina = read.csv(file='C:\\Users\\jlmic\\Documents\\Survival Analysis\\Data\\katrina.csv')
-#katrina = read.csv(file='C:\\Users\\Steven\\Documents\\MSA\\Analytics Foundations\\Survival\\data\\katrina.csv')
-katrina = read.csv(file='C:\\Users\\chels\\Desktop\\MSA\\Fall 3\\Survival Analysis\\2017SA Data\\katrina.csv')
+katrina = read.csv(file='C:\\Users\\Steven\\Documents\\MSA\\Analytics Foundations\\Survival\\data\\katrina.csv')
+#katrina = read.csv(file='C:\\Users\\chels\\Desktop\\MSA\\Fall 3\\Survival Analysis\\2017SA Data\\katrina.csv')
 #View(katrina)
 
 #censuring everything but motor and surge failures
@@ -79,7 +78,6 @@ ggsurvplot(survfit(fit_cox), data = katrina, legend = "none", break.y.by = 0.1,
 
 ### concordance
 concordance(fit_cox)
-
 #n= 770 
 #Concordance= 0.6665 se= 0.01877
 #discordant concordant     tied.x     tied.y    tied.xy 
@@ -112,7 +110,7 @@ ggplot(resids, aes(x = ID, y = res_d, color = factor(event))) +
   labs(x = "ID", y = "deviance residuals", color = "event") +
   scale_color_manual(values = c("purple", "orange"))
 # or you can just find the observation corresponding to the max deviance res.
-which.max(resids$res_d) # it's observation 101
+which.max(resids$res_d) # it's observation 555
 
 ### dfbetas
 ggcoxdiagnostics(fit_cox, type = "dfbetas")
@@ -130,5 +128,67 @@ visreg(fit_cox, "slope", xlab = "slope", ylab = "partial residuals",
 visreg(fit_cox, "elevation", xlab = "elevation", ylab = "partial residuals", gg = TRUE,
        band = FALSE) +
   geom_smooth(col = "red", fill = "red") + theme_bw()
+# Def not linear for elevation. Debatable for slope.
 
+###### Bullet #3 #########
+#creating id for all rows
+katrina$id <- seq(1:nrow(katrina))
+katrina$over.run <- 0
+samplerow <- katrina[400,]
+
+twelve.check <- function(row){
+  #function to check for twelve 1's in a row in the H1:H48 columns
+  hrs.running <- 0
+  overrun=list() 
+  
+  for (hr in 1:48){
+    # previous <- row[1,paste0("h",hr-1,sep="")]
+    current <- row[1,paste0("h",hr,sep="")]
+    
+    if (is.na(current)) {
+      row$end = hr
+      overrun[hr]=NA
+    } else if(current == 1){
+      hrs.running <- hrs.running + 1
+      
+      # nested logic to determine if 
+      if(hrs.running >= 12){
+        overrun[hr]=1
+      }else if (hrs.running < 12){
+        overrun[hr]=0
+      }
+      
+    } else if(current == 0){
+      hrs.running <- 0
+      overrun[hr]=0
+    }
+    
+    
+    print(paste("hr: ", hr,"|   runnning: ", current, "|   overrun: ", overrun[hr]))
+    
+  }
+  # returning 49 so it's easy to distinguish the non-events
+  return(overrun)
+  
+}
+
+twelve.check(samplerow)
+
+if (target!=49){
+  rhold <- samplerow[paste0("h", 1:target, sep="")]
+  rtail <- samplerow[paste0("h", (target+1):48, sep="")]
+  restart <- c(as.numeric(rtail), rep(NA, target))
+}
+
+duplicate.row <- function(df, row){
+  df[nrow(df) + 1,] <- row
+  
+}
+pull.n.clear <- function(df, id){
+  
+}
+
+clear.n.place <- function(df, id){
+  
+}
 

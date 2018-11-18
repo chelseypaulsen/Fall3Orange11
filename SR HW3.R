@@ -5,8 +5,8 @@
 #       Orange 11          #
 #                          #
 #--------------------------#
-install.packages('truncnorm')
-install.packages('Rlab')
+#install.packages('truncnorm')
+#install.packages('Rlab')
 library(dplyr)
 library(truncnorm)
 library(Rlab)
@@ -47,11 +47,11 @@ for(j in 1:10000){
   num_wet_wells[j] = results[2,2]
   prop_wet_wells[j] = num_wet_wells[j]/planned_wells
 }
-hist(prop_wet_wells)
+hist(prop_wet_wells, breaks=50)
 results
 sucess
 prop_wet_wells
-
+med = median(prop_wet_wells)
 # Calculate 5% VaR
 VaR.percentile = .05
 VaR <- quantile(prop_wet_wells, VaR.percentile, na.rm=TRUE)
@@ -64,3 +64,12 @@ ES = mean(bottom5, na.rm=TRUE)
 
 # Print Var and ES
 print(paste('VaR:',VaR,'ES:',ES))
+
+#Histograms
+hist(prop_wet_wells, breaks=50, col = 'cornflowerblue', main='Distribution of the Proportion of Wet Wells', xlab='Proportion')
+abline(v = med , col="darkorange3", lwd=2)
+abline(v = VaR , col="darkorange3", lwd=2)
+abline(v = ES , col="darkorange3", lwd=2)
+mtext("Median", at=median(prop_wet_wells)+400 , col="darkorange3")
+mtext("VaR", at=VaR , col="darkorange3")
+mtext("ES (CVaR)", at=ES , col="darkorange3")

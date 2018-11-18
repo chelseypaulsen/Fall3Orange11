@@ -5,31 +5,38 @@
 #       Orange 11          #
 #                          #
 #--------------------------#
-#install.packages('truncnorm')
-#install.packages('Rlab')
-library(dplyr)
+
 library(truncnorm)
 library(Rlab)
-library(graphics)
-library(quantmod)
-library(TTR)
-library(ks)
-library(scales)
 
-set.seed(112233)
+#set seed
+set.seed(112358)
+
 #dist for hydrocarbons
 hydrocarbons = rtruncnorm(100000, a=0, b=1, mean = .9, sd = .05)
-hist(hydrocarbons)
+hist(hydrocarbons, col = 'cornflowerblue', main='Histogram of Probability of Hydrocarbons Being Present', xlab='Probability')
+abline(v =   0.8985832 , col="darkorange3", lwd=2)
+mtext("Median = 0.899", at=0.899 , col="darkorange3")
+
+median(hydrocarbons)
 
 #dist for reservoir
 reservoir = rtruncnorm(100000, a=0, b=1, mean = .8, sd = .1)
-hist(reservoir)
+hist(reservoir, col = 'cornflowerblue', main='Histogram of Probability of Reservoir Being Developed in Rock Formation', xlab='Probability')
+abline(v =  0.7983274 , col="darkorange3", lwd=2)
+mtext("Median = 0.798", at=0.7983274 , col="darkorange3")
 
-#dist of the probability of success
+median(reservoir)
+
+#dist of the probability of sucess
 prob_of_sucess = hydrocarbons*reservoir
-hist(prob_of_sucess)
+hist(prob_of_sucess, col = 'cornflowerblue', main='Histogram of Probability of a Well Being Wet', xlab='Probability')
+abline(v =  0.713916 , col="darkorange3", lwd=2)
+mtext("Median = 0.714", at=0.713916 , col="darkorange3")
 
-#dist of the number of proportion of wet wells
+median(prob_of_sucess)
+
+#dist of the proportion of wet wells
 num_wet_wells = rep(0,10000)
 prop_wet_wells = rep(0,10000)
 for(j in 1:10000){
@@ -42,34 +49,48 @@ for(j in 1:10000){
     sucess[i] = rbern(1, prob_of_sucess[i])
   }
   
-  #counts the number of wet wells out of our planned wells
+  #counts the number/proportion of wet wells out of our planned wells
   results =data.frame(table(sucess))
   num_wet_wells[j] = results[2,2]
-  prop_wet_wells[j] = num_wet_wells[j]/planned_wells
+  prop_wet_wells[j] = num_wet_wells[j]/floor(planned_wells)
 }
-hist(prop_wet_wells, breaks=50)
+
+#need to change the NA's to 0's. The results[2,2] is NA when there are no wet wells.
+prop_wet_wells[is.na(prop_wet_wells)] = 0
+
+hist(prop_wet_wells,col = 'cornflowerblue', main='Histogram of Proportion of Wet Wells', xlab='Proportion of Wet Wells')
+abline(v =  0.7272727 , col="darkorange3", lwd=2)
+mtext("Median", at=0.7272727 , col="darkorange3")
+abline(v =  0.53269 , col="darkorange3", lwd=2)
+mtext("VaR", at=0.53269+0.01 , col="darkorange3")
+abline(v =  0.47565 , col="darkorange3", lwd=2)
+mtext("ES", at=0.47565-.01 , col="darkorange3")
+
+median(prop_wet_wells)
 results
 sucess
 prop_wet_wells
-med = median(prop_wet_wells)
+
 # Calculate 5% VaR
 VaR.percentile = .05
 VaR <- quantile(prop_wet_wells, VaR.percentile, na.rm=TRUE)
-
 
 # Calcuate 5% ES (CVaR)
 # Mean of values below the VaR
 bottom5 = prop_wet_wells[prop_wet_wells < VaR]
 ES = mean(bottom5, na.rm=TRUE)
-
 # Print Var and ES
 print(paste('VaR:',VaR,'ES:',ES))
 
-#Histograms
-hist(prop_wet_wells, breaks=50, col = 'cornflowerblue', main='Distribution of the Proportion of Wet Wells', xlab='Proportion')
-abline(v = med , col="darkorange3", lwd=2)
-abline(v = VaR , col="darkorange3", lwd=2)
-abline(v = ES , col="darkorange3", lwd=2)
-mtext("Median", at=median(prop_wet_wells)+400 , col="darkorange3")
-mtext("VaR", at=VaR , col="darkorange3")
-mtext("ES (CVaR)", at=ES , col="darkorange3")
+
+#histogram of planned wells for the report
+planned_wells = runif(10000, 10,30)
+hist(planned_wells, col = 'cornflowerblue', main='Histogram of the Number of Planned Wells', xlab='Probability')
+abline(v =  20.022 , col="darkorange3", lwd=2)
+mtext("Median = 20.022", at=20.022 , col="darkorange3")
+
+median(planned_wells)
+
+
+
+

@@ -16,15 +16,15 @@ library(TTR)
 library(ks)
 library(scales)
 
-set.seed(112233)
+set.seed(112358)
 #dist for hydrocarbons
 hydrocarbons = rtruncnorm(100000, a=0, b=1, mean = .9, sd = .05)
 hist(hydrocarbons)
-
+median(hydrocarbons)
 #dist for reservoir
 reservoir = rtruncnorm(100000, a=0, b=1, mean = .8, sd = .1)
 hist(reservoir)
-
+median(reservoir)
 #dist of the probability of success
 prob_of_sucess = hydrocarbons*reservoir
 hist(prob_of_sucess)

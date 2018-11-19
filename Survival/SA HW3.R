@@ -152,7 +152,8 @@ ggplot(resids, aes(x = ID, y = res_d, color = factor(event))) +
   labs(x = "ID", y = "deviance residuals", color = "event") +
   scale_color_manual(values = c("purple", "orange"))
 # or you can just find the observation corresponding to the max deviance res.
-which.max(resids$res_d) # it's observation 555
+which.max(resids$res_d) # it's observation 464
+View(resids)
 
 ### dfbetas
 ggcoxdiagnostics(fit_cox, type = "dfbetas")
@@ -235,10 +236,10 @@ fit_cox2<- coxph(Surv(overrun$Start, overrun$Stop, event = overrun$reason %in% c
                    backup + bridgecrane + servo + trashrack + elevation +
                   slope + age + Over_Worked, data = overrun)
 
-
 str(fit_cox2)
 summary(fit_cox2)
 exp(coef(fit_cox2))
+summary(fit_cox2)$coefficients[,3]
 
 #creating new data, so average values of binary variables aren't used
 mean.elev <- mean(katrina$elevation)

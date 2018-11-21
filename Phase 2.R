@@ -249,8 +249,8 @@ destandardize <- function(x.std, x){
   x.old = (x.std * sd(x)) + mean(x)
   return(x.old)
 }
-final.DR_IP = matrix(0, 10000, 2)
-for(j in 1:10000){
+final.DR_IP = matrix(0, simulation.size2, 2)
+for(j in 1:simulation.size2){
   # @#@#@#@ move this out of loop for homework 
   IP <- rlnorm(simulation.size2, meanlog = 6, sdlog = .28)
   decline.rate = runif(simulation.size2, min=0.15, max=0.32)
@@ -263,7 +263,7 @@ for(j in 1:10000){
 }
 
 df_oil_vol = matrix(0, 15, simulation.size2)
-for (j in 1:10000){
+for (j in 1:simulation.size2){
   IP <- rlnorm(simulation.size2, meanlog = 6, sdlog = .28)
   decline.rate = runif(simulation.size2, min=0.15, max=0.32)
   Both.r <- cbind(standardize(decline.rate), standardize(IP))
@@ -307,7 +307,7 @@ df2 = df2[1:15,]
 # Make an empty dataframe for the 15 years and oil prices
 
 oil = matrix(, 15, simulation.size2)
-for (j in 1:10000){
+for (j in 1:simulation.size2){
   for (i in 1:nrow(df2) ) {
     oil.price <- rtriangle(simulation.size, a=df2$`Low Oil Price`[i], b=df2$`High Oil Price`[i], c=df2$`AEO2018 Reference`[i])
     oil[i,j] = oil.price
@@ -322,7 +322,7 @@ hist(final_year, breaks=50, col = 'cornflowerblue', main='Oil Price Normal Appro
 # annual revenues before the royalty payments are simply (Oil Price X Annual Production)
 # This calculation is done per well for the entire life of the well.
 NRI = matrix(, 15, simulation.size2)
-for (i in 1:10000) {
+for (i in 1:simulation.size2) {
   NRI[,i] = rnorm(simulation.size, mean=0.75, sd=0.02)
 }
 
@@ -336,9 +336,9 @@ Dil.Rev[1:15,1:10]
 # but could change from year to year with this distribution
 # assign the distribution of operational costs
 
-OperationCost = matrix(0,15,10000) 
+OperationCost = matrix(0,15,simulation.size2) 
 #Didnt have the outside loop
-for (j in 1:10000) {
+for (j in 1:simulation.size2) {
   for (i in 1:15){
     op.costs = rnorm(n=1, mean=2.25, sd=0.3)
     OperationCost[i,j] = ann.prod[i,j]*op.costs
@@ -349,8 +349,8 @@ OperationCost[1:15,1:10]
 hist(OperationCost[15,])
 
 # Calculating the Professional Overhead # change for 10000 And DO NOT COMPOUND
-PO = matrix(0,15,10000)
-for(j in 1:10000){
+PO = matrix(0,15,simulation.size2)
+for(j in 1:simulation.size2){
   prof.overhead = rtriangle(n=1, a=172000, b=279500, c=215000)
   for(i in 0:15){
     PO[i,j] <- prof.overhead
@@ -386,7 +386,7 @@ df_init_costs[1:10]
 
 
 ### NET PRESENT VALUE ###
-df_total = matrix(0,15,10000)
+df_total = matrix(0,15,simulation.size2)
 
 # define WACC function
 WACC = NULL

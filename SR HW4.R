@@ -568,7 +568,7 @@ for(j in 1:sim.size2){
   }
 }
 
-hist(NPV_total, col = 'cornflowerblue', main='Histogram of the Number of Planned Wells', xlab='Probability')
+hist(NPV_total, col = 'cornflowerblue', main='Histogram of the Total NPV for the Project', xlab='NPV (Dollars)')
 abline(v =  median(NPV_total) , col="darkorange3", lwd=2)
 mtext("Median = ###", at=median(NPV_total) , col="darkorange3")
 median(NPV_total)
@@ -587,7 +587,7 @@ beep()
 
 
 
-
+#STUFF FROM STEVEN
 # Needed distributions from Phases 2 and 3:
 # dry_well = dist of costs for a wet well
 # NPV = Net present value of wet wells
@@ -617,9 +617,34 @@ beep()
 # Why do we have two simulation sizes... Which should I alter?
 
 
+
+
+
+
+
+
 ######## Bullet 2 ########
 #??? Calculate the expected return from the scenario, as well as measures of risk - such as Value at Risk and Expected Shortfall.
+
+#expected return 
+####@#@#@#@#@#@#@#@#@ IS THIS JUST THE MEAN OF THE NPV DIST?
+mean(NPV_total)
+
+# Calculate 5% VaR
+VaR.percentile = .05
+VaR <- quantile(NPV_total, VaR.percentile, na.rm=TRUE)
+VaR
+
+# Calcuate 5% ES (CVaR)
+# Mean of values below the VaR
+bottom5 = NPV_total[NPV_total < VaR]
+ES = mean(bottom5, na.rm=TRUE)
+# Print Var and ES
+print(paste('VaR:',VaR,'ES:',ES))
+
 
 
 ######## Bullet 3 ########
 # ??? Make a recommendation on whether the company should invest in the scenario described based on your above numbers.
+
+#I mean they are pretty much always making money so, yeah they should invest. 

@@ -2,24 +2,96 @@
 # Machine Learning Project #
 #      Orange Team 11      #
 ############################
-library(dplyr)
+rm(list=ls())
 
-df_ML = read.csv('C:\\Users\\jlmic\\Documents\\Machine Learning\\Data\\MLProjectData.csv')
-View(df_ML)
+library(tidyverse)
+library(caret)
+options(digits=2)
+
+#df_ML = read.csv('C:\\Users\\jlmic\\Documents\\Machine Learning\\Data\\MLProjectData.csv')
+df_ML = read.csv('C:\\Users\\Steven\\Documents\\MSA\\Analytics Foundations\\Machine Learning\\data\\MLProjectData.csv')
+#df_ML= read.csv('C:\\Users\\chels\\Desktop\\MSA\\Fall 3\\Machine Learning\\Project\\MLProjectData.csv')
+
+# Be careful to not include this ID column in analysis
+df_ML$ID <- seq(1,dim(df_ML)[1])
+
+# column groups
+cat.col = c('cat1','cat2','cat3','cat4','cat5','cat6','cat7','cat8','cat9','cat10','cat11','cat12','cat13','cat14','cat15',
+            'cat16','cat17','cat18','cat19','cat20','cat21','cat22','cat23','cat24','cat25','cat26')
+num.col <- paste('num',seq(1:59), sep='')
+log.col <- paste('cat',seq(3:26), sep='')
 
 # Split 'Training' dataset
-library(caret)
+set.seed(8) # The greatest number there ever was
 intrain<-createDataPartition(y=df_ML$target,p=0.7,list=FALSE)
 df_ML_train<-df_ML[intrain,]
 df_ML_validate<-df_ML[-intrain,]
 
 dim(df_ML_train)
 dim(df_ML_validate)
+View(df_ML_train)
+
+############################################################################
+#Exploration#
+############################################################################
+library(corrplot)
+
+summary(df_ML) # no missing values to worry about
+
+# Basic plots for exploring if we want them
+ggplot(df_ML_train) +
+  geom_histogram(aes(x=target, fill= cat13))
+
+ggplot(df_ML_train) +
+  geom_point(aes(x=num29, y=target, color= cat1), alpha=0.1)
+
+ggplot(df_ML_train) +
+  geom_histogram(aes(x=target)) +
+  facet_wrap(~ cat1) 
+
+
+#Correlation matrix
+corrplot(cor(df_ML[c(num.col,"target")]))
+# num2 and num8-11 are strongly correlated
+# num35-42 are strongly correlated with one another
+# num44-54 are strongly correlated with one another
+# num35-54 have stron negative correlations with num44=54
+# essentially no correlation b/w any numeric variable and the target... WTF? Is the target just random numbers?
+corrplot.mixed(cor(df_ML[c(num.col[10:20],"target")])) # weird negative correlation b/w num15-17 and num18-20
+
+# Frequency tables
+attach(df_ML)
+MLtable <- table(cat1, cat2)
+prop.table(MLtable)
+rm(MLtable)
+# almost even distribution across categorical columns
+
+# "ID", "target"
+# Histograms by variable, definitely some numeric columns with the same distributions
+df_ML %>%
+  keep(is.numeric) %>% 
+  gather() %>% 
+  ggplot(data=., aes(value)) +
+    facet_wrap(~ key, scales = "free") +
+    geom_histogram()
+
+df_ML %>%
+  select(which(sapply(.,class)=="numeric"),target,ID) %>% 
+  gather() %>%
+  ggplot(data=id, aes(x=ID, y=value)) +
+    facet_wrap(~ key, scales = "free") +
+    geom_point()
+
+
+############################################################################
+#Random Forest#
+############################################################################
 
 # Assign Random Forest Model
 library(randomForest)
 rf_ML = randomForest(target ~ ., data=df_ML_train, importance=TRUE, ntree=50)
 print(rf_ML)
+
 
 # Check Variable Importance
 importance(rf_ML) # all important
@@ -73,24 +145,19 @@ library(caret)
 library(car)
 
 ############# Copied from above ###############################################################################
-#df_xG = read.csv('C:\\Users\\jlmic\\Documents\\Machine Learning\\Data\\MLProjectData.csv')
-df_XG= read.csv('C:\\Users\\chels\\Desktop\\MSA\\Fall 3\\Machine Learning\\Project\\MLProjectData.csv')
-#View(df_XG)
 
-# Split 'Training' dataset
-intrain<-createDataPartition(y=df_XG$target,p=0.7,list=FALSE)
-df_XG_train<-df_XG[intrain,]
-df_XG_validate<-df_XG[-intrain,]
+df_XG <- df_ML
+df_XG_train <- df_ML_train
+df_XG_validate <- df_ML_validate
+#View(df_XG)
 
 ##############################################################################################################
 
 #All vars need to be numeric (or factors)
 
 #Changing all categorical vars to factors
-col = c('cat1','cat2','cat3','cat4','cat5','cat6','cat7','cat8','cat9','cat10','cat11','cat12','cat13','cat14','cat15',
-        'cat16','cat17','cat18','cat19','cat20','cat21','cat22','cat23','cat24','cat25','cat26')
-df_XG_train[col] = lapply(df_XG_train[col], factor)
-df_XG_validate[col] = lapply(df_XG_validate[col], factor)
+f_XG_train[cat.col] = lapply(df_XG_train[cat.col], factor)
+df_XG_validate[cat.col] = lapply(df_XG_validate[cat.col], factor)
 #Checking if it worked
 str(df_XG_train)
 str(df_XG_validate)

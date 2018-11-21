@@ -561,7 +561,7 @@ beep()
 #   NPV.p4[k] = pwet.samp*NPV.samp + pdry.samp*drycost.samp
 # }
 
-NPV.p4 = prop_wet_wells*NPV + (1-prop_wet_wells)*dry_well
+NPV.p4 = prop_wet_wells*NPV - (1-prop_wet_wells)*dry_well
 hist(NPV.p4, col = 'cornflowerblue', main='Histogram of NPV', xlab='Net Present Value (USD)')
 
 beep()

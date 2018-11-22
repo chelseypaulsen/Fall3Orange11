@@ -32,7 +32,7 @@ sigma = sd(data)
 
 #####Simulating the cost using a Normal distribution for 2006-2012 and the given triangular distributions for the other years
 set.seed(112358)
-sim.size2 = 10000
+sim.size2 = 100000
 #sim.size2 = 1E6
 
 # Multiple Input Probability Distributions #
@@ -551,7 +551,7 @@ beep()
 NPV_total = rep(0,sim.size2)
 for(j in 1:sim.size2){
   #calculates the number of wells that are planned to be drilled
-  planned_wells = runif(1, 10,30)
+  planned_wells = floor(runif(1, 10,31)) #rounding for a realistic # of wells
   
   
   #calculate cost of each wet/dry well in planned wells
@@ -586,48 +586,12 @@ beep()
 
 
 
-
-#STUFF FROM STEVEN
-# Needed distributions from Phases 2 and 3:
-# dry_well = dist of costs for a wet well
-# NPV = Net present value of wet wells
-# prop_wet_wells = Probability of wet well 
-# 1- prop_wet_wells = Probability of dry well 
-
-# unnecessary loop, b/c they're already random vectors, right?
-# for(k in 1:length(NPV)){
-#   # loop through as sample resulting distributions
-#   pwet.samp <- prop_wet_wells
-#   pdry.samp <- 1-pwet.samp
-#   drycost.samp <- dry_well
-#   NPV.samp <- NPV
-#   NPV.p4[k] = pwet.samp*NPV.samp + pdry.samp*drycost.samp
-# }
-
-# #Think this is wrong - Chelsey
-# NPV.p4 = prop_wet_wells*NPV - (1-prop_wet_wells)*dry_well
-# hist(NPV.p4, col = 'cornflowerblue', main='Histogram of NPV', xlab='Net Present Value (USD)')
-# 
-# beep()
-# beep()
-# beep()
-
-# a few questions:
-# Do I need to understand what Bernoulli's dist is?
-# Why do we have two simulation sizes... Which should I alter?
-
-
-
-
-
-
-
-
 ######## Bullet 2 ########
 #??? Calculate the expected return from the scenario, as well as measures of risk - such as Value at Risk and Expected Shortfall.
 
 #expected return 
 ####@#@#@#@#@#@#@#@#@ IS THIS JUST THE MEAN OF THE NPV DIST?
+# Based on the way he uses 'expected' in the notes ("expected shortfall", "expected loss" seems to be averages)
 mean(NPV_total)
 
 # Calculate 5% VaR

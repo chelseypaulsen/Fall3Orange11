@@ -488,15 +488,23 @@ mtext("VaR", at=VaR+8000000 , col="darkorange3")
 abline(v =  ES , col="darkorange3", lwd=2)
 mtext("ES", at=ES-8000000, col="darkorange3")
 
-# Automated histogram of full distribution (incase anything changes), w/ simplified axis
-hist(NPV_total/1000000, breaks=40, col = 'cornflowerblue',
+# Automated histogram of full distribution (incase anything changes), w/ more bins and simplified axis
+h <- hist(NPV_total/1000000, breaks=40)
+clr <- ifelse(h$breaks < VaR/1000000, "lightsalmon", "cornflowerblue")[-length(h$breaks)]
+linecol <- "orangered4"
+plot(h, col=clr,
      main='Distribution of Simulated Total NPVs', xlab='NPV (USD, Millions)')
-abline(v =  med_NPV/1000000 , col="darkorange3", lwd=2)
-mtext(paste("Median = $",round(med_NPV/1000000,1),"M", sep=""), at=med_NPV/1000000 , col="darkorange3")
-abline(v =  VaR/1000000 , col="darkorange3", lwd=2)
-mtext("VaR", at=VaR/1000000+8, col="darkorange3")
-abline(v =  ES/1000000 , col="darkorange3", lwd=2)
-mtext("ES", at=ES/1000000-8, col="darkorange3")
+abline(v =  med_NPV/1000000 , col=linecol, lwd=2)
+mtext(paste("Median = $",round(med_NPV/1000000,1),"M", sep=""), at=med_NPV/1000000 , 
+      col=linecol, cex=0.8) #shrinking w/ cex
+abline(v =  VaR/1000000 , col=linecol, lwd=2)
+mtext("VaR", at=VaR/1000000+8, col=linecol, cex=0.8)
+abline(v =  ES/1000000 , col=linecol, lwd=2)
+mtext("ES", at=ES/1000000-8, col=linecol, cex=0.8)
+legend("topright", c("NPV < VaR (5%, 15-year)", "NPV > VaR (5%, 15-year)"), 
+       col=c("lightsalmon", "cornflowerblue"), lwd=8, 
+       y.intersp=.6, cex = 0.6, bty = "n", xjust=1) 
+# exported at 750 x 525 pixels 
 
 
 ############ Confidence Intervals of VaR and ES ###########
@@ -506,7 +514,8 @@ sample.size <- 10000
 VaR.boot <- rep(0,n.bootstraps) #empty vectors of zeros to record VaR
 ES.boot <- rep(0,n.bootstraps)
 
-# this is the bootstrap
+# this is the "bootstrap" 
+# Well, LaBarr called it "bootstrap", but isn't it just random sampling if done w/o replacement
 for(i in 1:n.bootstraps){
   bootstrap.sample <- sample(NPV_total, size=sample.size) # a sample (w/o replacement) from the bigger simulation
   VaR.boot[i] <- quantile(bootstrap.sample, VaR.percentile, na.rm=TRUE)
@@ -519,29 +528,37 @@ VaR.boot.U <- quantile(VaR.boot, 0.975, na.rm=TRUE)
 VaR.boot.L <- quantile(VaR.boot, 0.025, na.rm=TRUE)
 ES.boot.U <- quantile(ES.boot, 0.975, na.rm=TRUE)
 ES.boot.L <- quantile(ES.boot, 0.025, na.rm=TRUE)
-dollar(quantile(VaR.boot, c(0.025, 0.975), na.rm=TRUE))
-dollar(quantile(ES.boot, c(0.025, 0.975), na.rm=TRUE))
+dollar(quantile(VaR.boot, c(0.025, 0.5, 0.975), na.rm=TRUE))
+dollar(quantile(ES.boot, c(0.025, 0.5,0.975), na.rm=TRUE))
+# calculating diff b/w median and outer percentiles
+dollar(quantile(VaR.boot, c(0.025, 0.5, 0.975), na.rm=TRUE)[3]-quantile(VaR.boot, c(0.025, 0.5, 0.975), na.rm=TRUE)[2])
+dollar(quantile(VaR.boot, c(0.025, 0.5, 0.975), na.rm=TRUE)[2]-quantile(VaR.boot, c(0.025, 0.5, 0.975), na.rm=TRUE)[1])
+dollar(quantile(ES.boot, c(0.025, 0.5, 0.975), na.rm=TRUE)[3]-quantile(ES.boot, c(0.025, 0.5, 0.975), na.rm=TRUE)[2])
+dollar(quantile(ES.boot, c(0.025, 0.5, 0.975), na.rm=TRUE)[2]-quantile(ES.boot, c(0.025, 0.5, 0.975), na.rm=TRUE)[1])
 
-Var_Label <- paste("VaR=$",round(VaR/1000000,1),"M", sep="")
-ES_Label <- paste("ES=$",round(ES/1000000,1),"M", sep="")
+
+Var_Label <- paste("VaR = $",round(VaR/1000000,1),"M", sep="")
+ES_Label <- paste("ES = $",round(ES/1000000,1),"M", sep="")
 
 # Histogram of tail (with confidence intervals)
 NPV_tail <- NPV_total[which(NPV_total<VaR)] # filtering to anything less than VaR 
-hist(NPV_tail/1000000, breaks=40, xlim=c(min(NPV_tail)/1000000, 1.25*max(NPV_tail)/1000000),
-     col = 'cornflowerblue',
-     main='Distribution of the Lowest 5% \n of Simulated NPV', xlab='NPV (USD, Millions)')
+hist(NPV_tail/1000000, breaks=40, xlim=c(min(NPV_tail)/1000000, 1.1*max(NPV_tail)/1000000),
+     col = 'lightsalmon',
+     main='Distribution of the Lowest 5% of Simulated NPV', xlab='NPV (USD, Millions)')
 # VaR with confidence intervals
-abline(v =  VaR/1000000 , col="darkorange3", lwd=2)
-mtext(Var_Label, at=VaR/1000000+2, col="darkorange3")
-abline(v = VaR.boot.L/1000000, col="darkorange", lwd=2, lty="dashed")
-abline(v = VaR.boot.U/1000000, col="darkorange", lwd=2, lty="dashed")
+col1="gray20"
+col2="gray40"
+abline(v =  VaR/1000000 , col=col1, lwd=2)
+mtext(Var_Label, at=VaR/1000000+2, col=col1, cex=0.8)
+abline(v = VaR.boot.L/1000000, col=col2, lwd=2, lty="dashed")
+abline(v = VaR.boot.U/1000000, col=col2, lwd=2, lty="dashed")
 #ES with confidence intervals
-abline(v =  ES/1000000 , col="darkorange3", lwd=2)
-mtext(ES_Label, at=ES/1000000-2, col="darkorange3")
-abline(v = ES.boot.L/1000000, col="darkorange", lwd=2, lty="dashed")
-abline(v = ES.boot.U/1000000, col="darkorange", lwd=2, lty="dashed")
+abline(v =  ES/1000000 , col=col1, lwd=2)
+mtext(ES_Label, at=ES/1000000-2, col=col1, cex=0.8)
+abline(v = ES.boot.L/1000000, col=col2, lwd=2, lty="dashed")
+abline(v = ES.boot.U/1000000, col=col2, lwd=2, lty="dashed")
 legend("topleft", c("Mean Value", "95% Confidence Interval"), 
-       col=c("darkorange3", "darkorange"), lty=c("solid", "dashed"), 
+       col=c(col1, col2), lty=c("solid", "dashed"), 
        y.intersp=.6, cex = 0.8, bty = "n") #y.intersp tightens legend vertically, cex shrinks font and bty turns off box outline
 
 

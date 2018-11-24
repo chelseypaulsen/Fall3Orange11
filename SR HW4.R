@@ -32,8 +32,8 @@ sigma = sd(data)
 
 #####Simulating the cost using a Normal distribution for 2006-2012 and the given triangular distributions for the other years
 set.seed(112358)
-sim.size2 = 100000
-#sim.size2 = 1E6
+#sim.size2 = 10000
+sim.size2 = 1E6
 
 # Multiple Input Probability Distributions #
 P2019n <- rep(0,sim.size2)
@@ -261,28 +261,42 @@ destandardize <- function(x.std, x){
   x.old = (x.std * sd(x)) + mean(x)
   return(x.old)
 }
-final.DR_IP = matrix(0, sim.size2, 2)
-for(j in 1:sim.size2){
-  # @#@#@#@ move this out of loop for homework 
-  IP <- rlnorm(sim.size2, meanlog = 6, sdlog = .28)
-  decline.rate = runif(sim.size2, min=0.15, max=0.32)
-  Both.r <- cbind(standardize(decline.rate), standardize(IP))
-  SB.r <- U %*% t(Both.r) # they become correlated multiplies in correlation structure # U is cholseki
-  SB.r <- t(SB.r) # t() = transpose # put it back in the normal form
-  # @#@#@#@
-  final.DR_IP[j] <- cbind(destandardize(SB.r[,1], decline.rate), destandardize(SB.r[,2], IP))
-  
-}
+
+######################################################################
+#changed this part from prior assignment
+
+
+IP <- rlnorm(sim.size2, meanlog = 6, sdlog = .28)
+decline.rate = runif(sim.size2, min=0.15, max=0.32)
+Both.r <- cbind(standardize(decline.rate), standardize(IP))
+SB.r <- U %*% t(Both.r) # they become correlated multiplies in correlation structure # U is cholseki
+SB.r <- t(SB.r) # t() = transpose # put it back in the normal form
+# @#@#@#@
+final.DR_IP <- cbind(destandardize(SB.r[,1], decline.rate), destandardize(SB.r[,2], IP))
+
+# final.DR_IP = matrix(0, sim.size2, 2)
+# for(j in 1:sim.size2){
+#   # @#@#@#@ move this out of loop for homework 
+#   IP <- rlnorm(sim.size2, meanlog = 6, sdlog = .28)
+#   decline.rate = runif(sim.size2, min=0.15, max=0.32)
+#   Both.r <- cbind(standardize(decline.rate), standardize(IP))
+#   SB.r <- U %*% t(Both.r) # they become correlated multiplies in correlation structure # U is cholseki
+#   SB.r <- t(SB.r) # t() = transpose # put it back in the normal form
+#   # @#@#@#@
+#   final.DR_IP[j] <- cbind(destandardize(SB.r[,1], decline.rate), destandardize(SB.r[,2], IP))
+#   
+# }
+
 
 df_oil_vol = matrix(0, 15, sim.size2)
 for (j in 1:sim.size2){
-  IP <- rlnorm(sim.size2, meanlog = 6, sdlog = .28)
-  decline.rate = runif(sim.size2, min=0.15, max=0.32)
-  Both.r <- cbind(standardize(decline.rate), standardize(IP))
-  SB.r <- U %*% t(Both.r) # they become correlated multiplies in correlation structure # U is cholseki
-  SB.r <- t(SB.r) # t() = transpose # put it back in the normal form
-  
-  final.DR_IP <- cbind(destandardize(SB.r[,1], decline.rate), destandardize(SB.r[,2], IP))
+  # IP <- rlnorm(sim.size2, meanlog = 6, sdlog = .28)
+  # decline.rate = runif(sim.size2, min=0.15, max=0.32)
+  # Both.r <- cbind(standardize(decline.rate), standardize(IP))
+  # SB.r <- U %*% t(Both.r) # they become correlated multiplies in correlation structure # U is cholseki
+  # SB.r <- t(SB.r) # t() = transpose # put it back in the normal form
+  # 
+  # final.DR_IP <- cbind(destandardize(SB.r[,1], decline.rate), destandardize(SB.r[,2], IP))
   for (i in 1:15){
     if (i == 1) {
       rate_YB = final.DR_IP[j,2]
@@ -298,6 +312,9 @@ for (j in 1:sim.size2){
 }
 df_oil_vol[1:15, 1:30]
 # End choleski retry
+
+######################################################################
+
 
 ann.prod = df_oil_vol
 ann.prod[1:15,1:10]
@@ -327,7 +344,6 @@ for (j in 1:sim.size2){
     oil[i,j] = oil.price
   }
 }
-head(oil)
 final_year = colSums(oil)
 hist(final_year, breaks=50, col = 'cornflowerblue', main='Oil Price Normal Approximation for 2019-2033')#, xlab='2019 Cost (Thousand Dollars)')
 
@@ -551,8 +567,7 @@ beep()
 NPV_total = rep(0,sim.size2)
 for(j in 1:sim.size2){
   #calculates the number of wells that are planned to be drilled
-  planned_wells = floor(runif(1, 10,31)) #rounding for a realistic # of wells
-  
+  planned_wells = runif(1, 10,30)
   
   #calculate cost of each wet/dry well in planned wells
   NPV_well=rep(0,planned_wells)
@@ -569,8 +584,14 @@ for(j in 1:sim.size2){
 }
 
 hist(NPV_total, col = 'cornflowerblue', main='Histogram of the Total NPV for the Project', xlab='NPV (Dollars)')
-abline(v =  median(NPV_total) , col="darkorange3", lwd=2)
-mtext("Median = ###", at=median(NPV_total) , col="darkorange3")
+abline(v =  mean(NPV_total) , col="darkorange3", lwd=2)
+mtext("Mean = 226M", at=mean(NPV_total) , col="darkorange3")
+abline(v =  98011418 , col="darkorange3", lwd=2)
+mtext("VaR", at=98011418+8000000 , col="darkorange3")
+abline(v =  76869576 , col="darkorange3", lwd=2)
+mtext("ES", at=76869576-8000000, col="darkorange3")
+# 
+
 median(NPV_total)
 min(NPV_total)
 max(NPV_total)
@@ -586,12 +607,50 @@ beep()
 
 
 
+
+#STUFF FROM STEVEN
+# Needed distributions from Phases 2 and 3:
+# dry_well = dist of costs for a wet well
+# NPV = Net present value of wet wells
+# prop_wet_wells = Probability of wet well 
+# 1- prop_wet_wells = Probability of dry well 
+
+# unnecessary loop, b/c they're already random vectors, right?
+# for(k in 1:length(NPV)){
+#   # loop through as sample resulting distributions
+#   pwet.samp <- prop_wet_wells
+#   pdry.samp <- 1-pwet.samp
+#   drycost.samp <- dry_well
+#   NPV.samp <- NPV
+#   NPV.p4[k] = pwet.samp*NPV.samp + pdry.samp*drycost.samp
+# }
+
+# #Think this is wrong - Chelsey
+# NPV.p4 = prop_wet_wells*NPV - (1-prop_wet_wells)*dry_well
+# hist(NPV.p4, col = 'cornflowerblue', main='Histogram of NPV', xlab='Net Present Value (USD)')
+# 
+# beep()
+# beep()
+# beep()
+
+# a few questions:
+# Do I need to understand what Bernoulli's dist is?
+# It is just a distribution that gives a 1 or 0 based on a probability threshold 
+# Why do we have two simulation sizes... Which should I alter?
+#The sim size 1 is just 1, we should probably just type 1 everywhere this is. Simsize.2 is the one we want to change. 
+
+
+
+
+
+
+
+
 ######## Bullet 2 ########
 #??? Calculate the expected return from the scenario, as well as measures of risk - such as Value at Risk and Expected Shortfall.
 
 #expected return 
 ####@#@#@#@#@#@#@#@#@ IS THIS JUST THE MEAN OF THE NPV DIST?
-# Based on the way he uses 'expected' in the notes ("expected shortfall", "expected loss" seems to be averages)
 mean(NPV_total)
 
 # Calculate 5% VaR

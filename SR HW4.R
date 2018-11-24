@@ -14,11 +14,12 @@ library(ks)
 library("readxl")
 library(triangle)
 library(beepr) # for the beep sound
+library(scales) # not very important, just for dollar function
 
 
 #reading the data frame. Notice that that the rows are now 1-48 instead of 3-51 in the xlsx file. 
-df <- read_xlsx("C:\\Users\\chels\\Desktop\\MSA\\Fall 3\\Simulation and Risk Analysis\\HW1\\Analysis_Data.xlsx",2,col_names=TRUE, col_types = c("date", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric"), range='A3:G51')
-#df <- read_xlsx("C:\\Users\\Steven\\Documents\\MSA\\Analytics Foundations\\Simulation and Risk\\data\\Analysis_Data2.xlsx",2,col_names=TRUE, col_types = c("date", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric"), range='A1:G49')
+# df <- read_xlsx("C:\\Users\\chels\\Desktop\\MSA\\Fall 3\\Simulation and Risk Analysis\\HW1\\Analysis_Data.xlsx",2,col_names=TRUE, col_types = c("date", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric"), range='A3:G51')
+df <- read_xlsx("C:\\Users\\Steven\\Documents\\MSA\\Analytics Foundations\\Simulation and Risk\\data\\Analysis_Data2.xlsx",2,col_names=TRUE, col_types = c("date", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric"), range='A1:G49')
 
 #find mean and standard deviation of the 48 observations
 data = c(df$"Arithmetic Return - Crude Oil"[32:47],df$"Arithmetic Return - Natural Gas"[32:47],df$"Arithmetic Return - Dry Well"[32:47] )
@@ -252,8 +253,8 @@ median(test)
 ############# Revenue Risk ##########
 #--------------------------------------#
 #df2 = read_xlsx("C:\\Users\\jlmic\\Documents\\Simulation and Risk\\Data\\Analysis_Data.xlsx",1,col_names=TRUE,range='A3:D35')
-df2 = read_xlsx("C:\\Users\\chels\\Desktop\\MSA\\Fall 3\\Simulation and Risk Analysis\\HW1\\Analysis_Data.xlsx",1,col_names=TRUE,range='A3:D35')
-#df2 = read_xlsx("C:\\Users\\Steven\\Documents\\MSA\\Analytics Foundations\\Simulation and Risk\\data\\Analysis_Data2.xlsx",1,col_names=TRUE,range='A1:D33')
+#df2 = read_xlsx("C:\\Users\\chels\\Desktop\\MSA\\Fall 3\\Simulation and Risk Analysis\\HW1\\Analysis_Data.xlsx",1,col_names=TRUE,range='A3:D35')
+df2 = read_xlsx("C:\\Users\\Steven\\Documents\\MSA\\Analytics Foundations\\Simulation and Risk\\data\\Analysis_Data2.xlsx",1,col_names=TRUE,range='A1:D33')
 df2 = df2[1:15,]
 
 
@@ -448,16 +449,8 @@ for(j in 1:sim.size2){
   }
 }
 
-hist(NPV_total, col = 'cornflowerblue', main='Histogram of the Total NPV for the Project', xlab='NPV (Dollars)')
-abline(v =  221967960 , col="darkorange3", lwd=2)
-mtext("Median = 222M", at=mean(NPV_total) , col="darkorange3")
-abline(v =  98011418 , col="darkorange3", lwd=2)
-mtext("VaR", at=98011418+8000000 , col="darkorange3")
-abline(v =  76869576 , col="darkorange3", lwd=2)
-mtext("ES", at=76869576-8000000, col="darkorange3")
-# 
-
 median(NPV_total)
+med_NPV <- median(NPV_total)
 min(NPV_total)
 max(NPV_total)
 mean(NPV_total)
@@ -485,6 +478,71 @@ ES = mean(bottom5, na.rm=TRUE)
 # Print Var and ES
 print(paste('VaR:',VaR,'ES:',ES))
 
+# Histogram
+hist(NPV_total, col = 'cornflowerblue',
+     main='Histogram of the Total NPV for the Project', xlab='NPV (Dollars)')
+abline(v =  med_NPV , col="darkorange3", lwd=2)
+mtext("Median = 222M", at=mean(NPV_total) , col="darkorange3")
+abline(v =  VaR , col="darkorange3", lwd=2)
+mtext("VaR", at=VaR+8000000 , col="darkorange3")
+abline(v =  ES , col="darkorange3", lwd=2)
+mtext("ES", at=ES-8000000, col="darkorange3")
+
+# Automated histogram of full distribution (incase anything changes), w/ simplified axis
+hist(NPV_total/1000000, breaks=40, col = 'cornflowerblue',
+     main='Distribution of Simulated Total NPVs', xlab='NPV (USD, Millions)')
+abline(v =  med_NPV/1000000 , col="darkorange3", lwd=2)
+mtext(paste("Median = $",round(med_NPV/1000000,1),"M", sep=""), at=med_NPV/1000000 , col="darkorange3")
+abline(v =  VaR/1000000 , col="darkorange3", lwd=2)
+mtext("VaR", at=VaR/1000000+8, col="darkorange3")
+abline(v =  ES/1000000 , col="darkorange3", lwd=2)
+mtext("ES", at=ES/1000000-8, col="darkorange3")
+
+
+############ Confidence Intervals of VaR and ES ###########
+n.bootstraps <- 10000
+sample.size <- 10000
+
+VaR.boot <- rep(0,n.bootstraps) #empty vectors of zeros to record VaR
+ES.boot <- rep(0,n.bootstraps)
+
+# this is the bootstrap
+for(i in 1:n.bootstraps){
+  bootstrap.sample <- sample(NPV_total, size=sample.size) # a sample (w/o replacement) from the bigger simulation
+  VaR.boot[i] <- quantile(bootstrap.sample, VaR.percentile, na.rm=TRUE)
+  ES.boot[i] <- mean(bootstrap.sample[bootstrap.sample < VaR.boot[i]], na.rm=TRUE)
+}
+
+hist(VaR.boot) # a sneak peak of the 95% conf interval.
+# calculating the 95% confidence interval
+VaR.boot.U <- quantile(VaR.boot, 0.975, na.rm=TRUE)
+VaR.boot.L <- quantile(VaR.boot, 0.025, na.rm=TRUE)
+ES.boot.U <- quantile(ES.boot, 0.975, na.rm=TRUE)
+ES.boot.L <- quantile(ES.boot, 0.025, na.rm=TRUE)
+dollar(quantile(VaR.boot, c(0.025, 0.975), na.rm=TRUE))
+dollar(quantile(ES.boot, c(0.025, 0.975), na.rm=TRUE))
+
+Var_Label <- paste("VaR=$",round(VaR/1000000,1),"M", sep="")
+ES_Label <- paste("ES=$",round(ES/1000000,1),"M", sep="")
+
+# Histogram of tail (with confidence intervals)
+NPV_tail <- NPV_total[which(NPV_total<VaR)] # filtering to anything less than VaR 
+hist(NPV_tail/1000000, breaks=40, xlim=c(min(NPV_tail)/1000000, 1.25*max(NPV_tail)/1000000),
+     col = 'cornflowerblue',
+     main='Distribution of the Lowest 5% \n of Simulated NPV', xlab='NPV (USD, Millions)')
+# VaR with confidence intervals
+abline(v =  VaR/1000000 , col="darkorange3", lwd=2)
+mtext(Var_Label, at=VaR/1000000+2, col="darkorange3")
+abline(v = VaR.boot.L/1000000, col="darkorange", lwd=2, lty="dashed")
+abline(v = VaR.boot.U/1000000, col="darkorange", lwd=2, lty="dashed")
+#ES with confidence intervals
+abline(v =  ES/1000000 , col="darkorange3", lwd=2)
+mtext(ES_Label, at=ES/1000000-2, col="darkorange3")
+abline(v = ES.boot.L/1000000, col="darkorange", lwd=2, lty="dashed")
+abline(v = ES.boot.U/1000000, col="darkorange", lwd=2, lty="dashed")
+legend("topleft", c("Mean Value", "95% Confidence Interval"), 
+       col=c("darkorange3", "darkorange"), lty=c("solid", "dashed"), 
+       y.intersp=.6, cex = 0.8, bty = "n") #y.intersp tightens legend vertically, cex shrinks font and bty turns off box outline
 
 
 ######## Bullet 3 ########

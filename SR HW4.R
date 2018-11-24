@@ -25,11 +25,6 @@ data = c(df$"Arithmetic Return - Crude Oil"[32:47],df$"Arithmetic Return - Natur
 mu = mean(data)
 sigma = sd(data)
 
-#QQ-plot of the 48 observations 
-#qqnorm(data, pch = 1, frame = FALSE)
-#qqline(data, col = "steelblue", lwd = 2)
-#hist(data, breaks=50, main='48 obs Distribution', xlab='Final Value')
-
 #####Simulating the cost using a Normal distribution for 2006-2012 and the given triangular distributions for the other years
 set.seed(112358)
 #sim.size2 = 10000
@@ -69,58 +64,7 @@ mtext("2006 Cost", at=2279.8 -400, col="darkorange3")
 abline(v = median(P2019n) , col="darkorange3", lwd=2)
 mtext("Median", at=median(P2019n)+400 , col="darkorange3")
 
-
-
-# 
-# #Building Kernel Density function for the 48 differences
-# Density.data <- density(data, bw="SJ-ste")
-# Density.data
-# Est.data<- rkde(fhat=kde(data, h=0.07935), n=sim.size2)
-# 
-# 
-# #####Simulating the cost using a Kernel Density Dist for 2006-2012 and the given triangular distributions for the other years
-# set.seed(112358)
-# 
-# #getting the bandwith for the kernel desity function for 2006-2012
-# set.seed(112358)
-# P2006 <- mean(c(2238.6, 1936.2, 2664.6)) 
-# r <- sample(Est.data, sim.size2) 
-# Pt <- P2006*(1 + r)
-# Density.Pt <- density(Pt, bw="SJ-ste")
-# # h=104.6
-# 
-# # Multiple Input Probability Distributions #
-# P2019k <- rep(0,sim.size2)
-# for(i in 1:sim.size2){
-#   P2006 <- mean(c(2238.6, 1936.2, 2664.6)) 
-#   r <- sample(Est.data, 1)
-#   Pt <- P2006*(1 + r)
-#   Pt <- rkde(fhat=kde(Pt, h=104.6), n=1)
-#   
-#   for(j in 1:5){ 
-#     r <- rnorm(n=1, mean=mu, sd=sigma)
-#     Pt <- Pt*(1+r)
-#     for(j in 1:3){ 
-#       r=rtriangle(1, -0.22, -0.07, -0.0917)
-#       Pt <- Pt*(1+r)
-#       for(j in 1:3){ 
-#         r=rtriangle(1, 0.02, 0.06, 0.05)
-#         Pt <- Pt*(1+r)
-#       }
-#     }
-#   }
-#   P2019k[i] <- Pt
-# }
-# 
-# mean(P2019k)
-# sd(P2019k)
-# median(P2019k)
-# 
-# hist(P2019k, breaks=50, col = 'cornflowerblue', main='2019 Cost Distribution Using Kernel Density Estimate', xlab='2019 Cost (Thousand Dollars)')
-# abline(v = 2279.8 , col="darkorange3", lwd=2)
-# mtext("2006 Cost", at=2279.8 -600, col="darkorange3")
-# abline(v = median(P2019k) , col="darkorange3", lwd=2)
-# mtext("Median", at=median(P2019k)+600 , col="darkorange3")
+#removed kernal dist and qq plots from the final code
 
 beep() #indicate when phase is done running so it doesn't take forever
 beep()
@@ -274,29 +218,8 @@ SB.r <- t(SB.r) # t() = transpose # put it back in the normal form
 # @#@#@#@
 final.DR_IP <- cbind(destandardize(SB.r[,1], decline.rate), destandardize(SB.r[,2], IP))
 
-# final.DR_IP = matrix(0, sim.size2, 2)
-# for(j in 1:sim.size2){
-#   # @#@#@#@ move this out of loop for homework 
-#   IP <- rlnorm(sim.size2, meanlog = 6, sdlog = .28)
-#   decline.rate = runif(sim.size2, min=0.15, max=0.32)
-#   Both.r <- cbind(standardize(decline.rate), standardize(IP))
-#   SB.r <- U %*% t(Both.r) # they become correlated multiplies in correlation structure # U is cholseki
-#   SB.r <- t(SB.r) # t() = transpose # put it back in the normal form
-#   # @#@#@#@
-#   final.DR_IP[j] <- cbind(destandardize(SB.r[,1], decline.rate), destandardize(SB.r[,2], IP))
-#   
-# }
-
-
 df_oil_vol = matrix(0, 15, sim.size2)
 for (j in 1:sim.size2){
-  # IP <- rlnorm(sim.size2, meanlog = 6, sdlog = .28)
-  # decline.rate = runif(sim.size2, min=0.15, max=0.32)
-  # Both.r <- cbind(standardize(decline.rate), standardize(IP))
-  # SB.r <- U %*% t(Both.r) # they become correlated multiplies in correlation structure # U is cholseki
-  # SB.r <- t(SB.r) # t() = transpose # put it back in the normal form
-  # 
-  # final.DR_IP <- cbind(destandardize(SB.r[,1], decline.rate), destandardize(SB.r[,2], IP))
   for (i in 1:15){
     if (i == 1) {
       rate_YB = final.DR_IP[j,2]
@@ -486,62 +409,7 @@ mtext("Median = 0.714", at=0.713916 , col="darkorange3")
 
 median(prob_of_sucess)
 
-# #################### consider commenting this all out after this point!!! 
-# #dist of the proportion of wet wells
-# num_wet_wells = rep(0,sim.size2)
-# prop_wet_wells = rep(0,sim.size2)
-# for(j in 1:sim.size2){
-#   #calculates the number of wells that are planned to be drilled
-#   planned_wells = runif(1, 10,30)
-#   
-#   #bernouli dist- 1 means the well was wet, 0 means dry
-#   sucess=rep(0,planned_wells)
-#   for(i in 1:planned_wells){
-#     sucess[i] = rbern(1, prob_of_sucess[i])
-#   }
-#   
-#   #counts the number/proportion of wet wells out of our planned wells
-#   results =data.frame(table(sucess))
-#   num_wet_wells[j] = results[2,2]
-#   prop_wet_wells[j] = num_wet_wells[j]/floor(planned_wells)
-# }
-# 
-# #need to change the NA's to 0's. The results[2,2] is NA when there are no wet wells.
-# prop_wet_wells[is.na(prop_wet_wells)] = 0
-# 
-# hist(prop_wet_wells,col = 'cornflowerblue', main='Histogram of Proportion of Wet Wells', xlab='Proportion of Wet Wells')
-# abline(v =  0.7272727 , col="darkorange3", lwd=2)
-# mtext("Median", at=0.7272727 , col="darkorange3")
-# abline(v =  0.53846 , col="darkorange3", lwd=2)
-# mtext("VaR", at=0.53846+0.01 , col="darkorange3")
-# abline(v =  0.43038 , col="darkorange3", lwd=2)
-# mtext("ES", at=0.43038-.01 , col="darkorange3")
-# 
-# median(prop_wet_wells)
-# results
-# sucess
-# prop_wet_wells
-# 
-# # Calculate 5% VaR
-# VaR.percentile = .05
-# VaR <- quantile(prop_wet_wells, VaR.percentile, na.rm=TRUE)
-# VaR
-# 
-# # Calcuate 5% ES (CVaR)
-# # Mean of values below the VaR
-# bottom5 = prop_wet_wells[prop_wet_wells < VaR]
-# ES = mean(bottom5, na.rm=TRUE)
-# # Print Var and ES
-# print(paste('VaR:',VaR,'ES:',ES))
-# 
-# 
-# #histogram of planned wells for the report
-# planned_wells = runif(sim.size2, 10,30)
-# hist(planned_wells, col = 'cornflowerblue', main='Histogram of the Number of Planned Wells', xlab='Probability')
-# abline(v =  19.972 , col="darkorange3", lwd=2)
-# mtext("Median = 19.972", at=19.972 , col="darkorange3")
-# 
-# median(planned_wells)
+# removed proportion calculations and VaR/ES/Histograms from previous assignment
 
 beep()
 beep()
@@ -559,9 +427,6 @@ beep()
 
 ######## Bullet 1 ########
 # Simulate the distribution of Net Present Value from the entire project (all of the wells).
-
-
-
 
 #dist of the proportion of wet wells
 NPV_total = rep(0,sim.size2)
@@ -584,8 +449,8 @@ for(j in 1:sim.size2){
 }
 
 hist(NPV_total, col = 'cornflowerblue', main='Histogram of the Total NPV for the Project', xlab='NPV (Dollars)')
-abline(v =  mean(NPV_total) , col="darkorange3", lwd=2)
-mtext("Mean = 226M", at=mean(NPV_total) , col="darkorange3")
+abline(v =  221967960 , col="darkorange3", lwd=2)
+mtext("Median = 222M", at=mean(NPV_total) , col="darkorange3")
 abline(v =  98011418 , col="darkorange3", lwd=2)
 mtext("VaR", at=98011418+8000000 , col="darkorange3")
 abline(v =  76869576 , col="darkorange3", lwd=2)
@@ -604,54 +469,9 @@ beep()
 beep()
 
 
-
-
-
-
-#STUFF FROM STEVEN
-# Needed distributions from Phases 2 and 3:
-# dry_well = dist of costs for a wet well
-# NPV = Net present value of wet wells
-# prop_wet_wells = Probability of wet well 
-# 1- prop_wet_wells = Probability of dry well 
-
-# unnecessary loop, b/c they're already random vectors, right?
-# for(k in 1:length(NPV)){
-#   # loop through as sample resulting distributions
-#   pwet.samp <- prop_wet_wells
-#   pdry.samp <- 1-pwet.samp
-#   drycost.samp <- dry_well
-#   NPV.samp <- NPV
-#   NPV.p4[k] = pwet.samp*NPV.samp + pdry.samp*drycost.samp
-# }
-
-# #Think this is wrong - Chelsey
-# NPV.p4 = prop_wet_wells*NPV - (1-prop_wet_wells)*dry_well
-# hist(NPV.p4, col = 'cornflowerblue', main='Histogram of NPV', xlab='Net Present Value (USD)')
-# 
-# beep()
-# beep()
-# beep()
-
-# a few questions:
-# Do I need to understand what Bernoulli's dist is?
-# It is just a distribution that gives a 1 or 0 based on a probability threshold 
-# Why do we have two simulation sizes... Which should I alter?
-#The sim size 1 is just 1, we should probably just type 1 everywhere this is. Simsize.2 is the one we want to change. 
-
-
-
-
-
-
-
-
 ######## Bullet 2 ########
 #??? Calculate the expected return from the scenario, as well as measures of risk - such as Value at Risk and Expected Shortfall.
-
-#expected return 
-####@#@#@#@#@#@#@#@#@ IS THIS JUST THE MEAN OF THE NPV DIST?
-mean(NPV_total)
+#used median for expected return
 
 # Calculate 5% VaR
 VaR.percentile = .05
@@ -671,3 +491,10 @@ print(paste('VaR:',VaR,'ES:',ES))
 # ??? Make a recommendation on whether the company should invest in the scenario described based on your above numbers.
 
 #I mean they are pretty much always making money so, yeah they should invest. 
+
+
+###### EXTRA STUFF ########
+sum(NPV_total<0)
+#82 times out of 1M they lose money
+
+

@@ -14,12 +14,11 @@ library(ks)
 library("readxl")
 library(triangle)
 library(beepr) # for the beep sound
-library(scales) # not very important, just for dollar function
 
 
 #reading the data frame. Notice that that the rows are now 1-48 instead of 3-51 in the xlsx file. 
-# df <- read_xlsx("C:\\Users\\chels\\Desktop\\MSA\\Fall 3\\Simulation and Risk Analysis\\HW1\\Analysis_Data.xlsx",2,col_names=TRUE, col_types = c("date", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric"), range='A3:G51')
-df <- read_xlsx("C:\\Users\\Steven\\Documents\\MSA\\Analytics Foundations\\Simulation and Risk\\data\\Analysis_Data2.xlsx",2,col_names=TRUE, col_types = c("date", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric"), range='A1:G49')
+df <- read_xlsx("C:\\Users\\chels\\Desktop\\MSA\\Fall 3\\Simulation and Risk Analysis\\HW1\\Analysis_Data.xlsx",2,col_names=TRUE, col_types = c("date", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric"), range='A3:G51')
+#df <- read_xlsx("C:\\Users\\Steven\\Documents\\MSA\\Analytics Foundations\\Simulation and Risk\\data\\Analysis_Data2.xlsx",2,col_names=TRUE, col_types = c("date", "numeric", "numeric", "numeric", "numeric", "numeric", "numeric"), range='A1:G49')
 
 #find mean and standard deviation of the 48 observations
 data = c(df$"Arithmetic Return - Crude Oil"[32:47],df$"Arithmetic Return - Natural Gas"[32:47],df$"Arithmetic Return - Dry Well"[32:47] )
@@ -253,8 +252,8 @@ median(test)
 ############# Revenue Risk ##########
 #--------------------------------------#
 #df2 = read_xlsx("C:\\Users\\jlmic\\Documents\\Simulation and Risk\\Data\\Analysis_Data.xlsx",1,col_names=TRUE,range='A3:D35')
-#df2 = read_xlsx("C:\\Users\\chels\\Desktop\\MSA\\Fall 3\\Simulation and Risk Analysis\\HW1\\Analysis_Data.xlsx",1,col_names=TRUE,range='A3:D35')
-df2 = read_xlsx("C:\\Users\\Steven\\Documents\\MSA\\Analytics Foundations\\Simulation and Risk\\data\\Analysis_Data2.xlsx",1,col_names=TRUE,range='A1:D33')
+df2 = read_xlsx("C:\\Users\\chels\\Desktop\\MSA\\Fall 3\\Simulation and Risk Analysis\\HW1\\Analysis_Data.xlsx",1,col_names=TRUE,range='A3:D35')
+#df2 = read_xlsx("C:\\Users\\Steven\\Documents\\MSA\\Analytics Foundations\\Simulation and Risk\\data\\Analysis_Data2.xlsx",1,col_names=TRUE,range='A1:D33')
 df2 = df2[1:15,]
 
 
@@ -449,8 +448,16 @@ for(j in 1:sim.size2){
   }
 }
 
+hist(NPV_total, col = 'cornflowerblue', main='Histogram of the Total NPV for the Project', xlab='NPV (Dollars)')
+abline(v =  221967960 , col="darkorange3", lwd=2)
+mtext("Median = 222M", at=mean(NPV_total) , col="darkorange3")
+abline(v =  98011418 , col="darkorange3", lwd=2)
+mtext("VaR", at=98011418+8000000 , col="darkorange3")
+abline(v =  76869576 , col="darkorange3", lwd=2)
+mtext("ES", at=76869576-8000000, col="darkorange3")
+# 
+
 median(NPV_total)
-med_NPV <- median(NPV_total)
 min(NPV_total)
 max(NPV_total)
 mean(NPV_total)
@@ -560,6 +567,8 @@ abline(v = ES.boot.U/1000000, col=col2, lwd=2, lty="dashed")
 legend("topleft", c("Mean Value", "95% Confidence Interval"), 
        col=c(col1, col2), lty=c("solid", "dashed"), 
        y.intersp=.6, cex = 0.8, bty = "n") #y.intersp tightens legend vertically, cex shrinks font and bty turns off box outline
+
+
 
 
 ######## Bullet 3 ########

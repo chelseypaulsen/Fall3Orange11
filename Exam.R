@@ -61,16 +61,31 @@ clust3 <- data.frame(pca$scores[which(kmeans$cluster==3),1:64])
 ggplot(clust3) +
   geom_point(aes(x=Comp.1, y=Comp.2), alpha=0.2)
 
+View(cluster.means.df)
 
-colMeans(cdata[which(cdata$cluster==1),])
-colMeans(cdata[which(cdata$cluster==2),])
-colMeans(cdata[which(cdata$cluster==3),])
-colMeans(cdata[which(cdata$cluster==4),])
+#looking at counts/proportions
+table(cdata$cluster)
+prop.table(table(cdata$cluster))
 
+#just looking at a few means
 cdata %>%
   group_by(cluster) %>%
   summarise(mean.age=mean(AGE), mean.smoke=mean(EVER_SMOKE), mean.ASTHMA=mean(ASTHMA), mean.pov=mean(POVERTY_RATIO))  
 
+#looking at all means
+means <- cdata %>%
+  group_by(cluster) %>%
+  summarise_all("mean")
+
+#plotting a variable by cluster
+ggplot(cdata)+
+  geom_density(aes(x=AGE, color=as.factor(cluster)))
+
+#plotting a small handful of the variables
+long = gather(cdata, id.vars= colnames(cdata[1:16]))
+ggplot(long) +
+  geom_density(aes(x=value, color=as.factor(cluster))) +
+  facet_wrap(~key, scales='free')
 
 summary(group_by(cdata, cluster))
 

@@ -63,15 +63,8 @@ for(j in 1:10000){
 #need to change the NA's to 0's. The results[2,2] is NA when there are no wet wells.
 prop_wet_wells[is.na(prop_wet_wells)] = 0
 
-hist(prop_wet_wells,col = 'cornflowerblue', main='Histogram of Proportion of Wet Wells', xlab='Proportion of Wet Wells')
-abline(v =  0.7272727 , col="darkorange3", lwd=2)
-mtext("Median", at=0.7272727 , col="darkorange3")
-abline(v =  0.53269 , col="darkorange3", lwd=2)
-mtext("VaR", at=0.53269+0.01 , col="darkorange3")
-abline(v =  0.47565 , col="darkorange3", lwd=2)
-mtext("ES", at=0.47565-.01 , col="darkorange3")
+med_wet <- median(prop_wet_wells)
 
-median(prop_wet_wells)
 min(prop_wet_wells)
 max(prop_wet_wells)
 results
@@ -90,11 +83,22 @@ ES = mean(bottom5, na.rm=TRUE)
 print(paste('VaR:',VaR,'ES:',ES))
 
 
+hist(prop_wet_wells,col = 'cornflowerblue', main='Histogram of Proportion of Wet Wells', xlab='Proportion of Wet Wells')
+abline(v =  med_wet , col="darkorange3", lwd=2)
+mtext("Median", at=med_wet , col="darkorange3")
+abline(v =  VaR , col="darkorange3", lwd=2)
+mtext("VaR", at=VaR+0.01 , col="darkorange3")
+abline(v =  ES , col="darkorange3", lwd=2)
+mtext("ES", at=ES-.01 , col="darkorange3")
+
+
+
 #histogram of planned wells for the report
-planned_wells = runif(10000, 10,30)
+planned_wells = sample(10:30,10000, replace=TRUE)
 hist(planned_wells, col = 'cornflowerblue', main='Histogram of the Number of Planned Wells', xlab='Probability')
 abline(v =  20.022 , col="darkorange3", lwd=2)
 mtext("Median = 20.022", at=20.022 , col="darkorange3")
+#funky doubling at n=10, but we don't need that graph anyway
 
 median(planned_wells)
 

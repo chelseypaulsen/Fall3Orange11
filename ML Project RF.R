@@ -449,7 +449,8 @@ svm1=svm(target~., data=SVM_trainscale2, kernel='radial', gamma=bestgamma, cost=
 # Predict
 test_pred=predict(svm1,testData_scale2) # NO clue why this is breaking. 
 
-
-
-
-
+# Make final submission predictions
+Row = seq(1,77,by=1)
+Prediction = test_pred
+Orange11 = cbind(Row, Prediction)
+write.csv(Orange11, file = "Orange11.csv")

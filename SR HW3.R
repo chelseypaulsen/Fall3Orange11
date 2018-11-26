@@ -35,24 +35,29 @@ abline(v =  0.713916 , col="darkorange3", lwd=2)
 mtext("Median = 0.714", at=0.713916 , col="darkorange3")
 
 median(prob_of_sucess)
+length(prob_of_sucess)
 
 #dist of the proportion of wet wells
 num_wet_wells = rep(0,10000)
 prop_wet_wells = rep(0,10000)
+k=1
+prob_of_sucess=c()
 for(j in 1:10000){
   #calculates the number of wells that are planned to be drilled
-  planned_wells = runif(1, 10,30)
+  planned_wells = sample(10:30,1)
   
-  #bernouli dist- 1 means the well was wet, 0 means dry
+  #bernouli dist- 1 means the well was wet, 0 means dr
   sucess=rep(0,planned_wells)
   for(i in 1:planned_wells){
-    sucess[i] = rbern(1, prob_of_sucess[i])
+    prob_of_sucess[k] = hydrocarbons[j]*reservoir[j]
+    sucess[i] = rbern(1, prob_of_sucess[k])
+    k=k+1
   }
   
   #counts the number/proportion of wet wells out of our planned wells
   results =data.frame(table(sucess))
   num_wet_wells[j] = results[2,2]
-  prop_wet_wells[j] = num_wet_wells[j]/floor(planned_wells)
+  prop_wet_wells[j] = num_wet_wells[j]/planned_wells
 }
 
 #need to change the NA's to 0's. The results[2,2] is NA when there are no wet wells.
@@ -61,12 +66,14 @@ prop_wet_wells[is.na(prop_wet_wells)] = 0
 hist(prop_wet_wells,col = 'cornflowerblue', main='Histogram of Proportion of Wet Wells', xlab='Proportion of Wet Wells')
 abline(v =  0.7272727 , col="darkorange3", lwd=2)
 mtext("Median", at=0.7272727 , col="darkorange3")
-abline(v =  0.53846 , col="darkorange3", lwd=2)
-mtext("VaR", at=0.53846+0.01 , col="darkorange3")
-abline(v =  0.43038 , col="darkorange3", lwd=2)
-mtext("ES", at=0.43038-.01 , col="darkorange3")
+abline(v =  0.53269 , col="darkorange3", lwd=2)
+mtext("VaR", at=0.53269+0.01 , col="darkorange3")
+abline(v =  0.47565 , col="darkorange3", lwd=2)
+mtext("ES", at=0.47565-.01 , col="darkorange3")
 
 median(prop_wet_wells)
+min(prop_wet_wells)
+max(prop_wet_wells)
 results
 sucess
 prop_wet_wells
@@ -74,7 +81,6 @@ prop_wet_wells
 # Calculate 5% VaR
 VaR.percentile = .05
 VaR <- quantile(prop_wet_wells, VaR.percentile, na.rm=TRUE)
-VaR
 
 # Calcuate 5% ES (CVaR)
 # Mean of values below the VaR
@@ -87,8 +93,8 @@ print(paste('VaR:',VaR,'ES:',ES))
 #histogram of planned wells for the report
 planned_wells = runif(10000, 10,30)
 hist(planned_wells, col = 'cornflowerblue', main='Histogram of the Number of Planned Wells', xlab='Probability')
-abline(v =  19.972 , col="darkorange3", lwd=2)
-mtext("Median = 19.972", at=19.972 , col="darkorange3")
+abline(v =  20.022 , col="darkorange3", lwd=2)
+mtext("Median = 20.022", at=20.022 , col="darkorange3")
 
 median(planned_wells)
 

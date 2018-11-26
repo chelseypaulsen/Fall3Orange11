@@ -294,11 +294,14 @@ df_SVM_validate<-df_ML[-intrain,]
 ############       STANDARDIZE THE CONTINUOUS VARIABLES        ############
 ###########################################################################
 ###########################################################################
-
-SVM_trainscale = scale(df_SVM_train[,1:59], center=T, scale=T)
+SVM_train = df_SVM_train[,1:59]
+SVM_trainscale = scale(SVM_train, center=T, scale=T)
 SVM_trainscale2 = cbind(SVM_trainscale, df_SVM_train[,60:86])
 
-SVM_validscale = scale(df_SVM_validate[,1:59], center=T, scale=T)
+mean_trainscale = colMeans(SVM_train)
+sd_trainscale = apply(SVM_train, 2, sd)
+  
+SVM_validscale = scale(df_SVM_validate[,1:59], center=mean_trainscale, scale=sd_trainscale)
 SVM_validscale2 = cbind(SVM_validscale, df_SVM_validate[,60:86])
 
 #install.packages("e1071")
@@ -455,15 +458,11 @@ print(MAE)
 testData = test.data
 # testData_csv = read.csv(file = 'C:\\Users\\jlmic\\Documents\\Machine Learning\\Data\\testData.csv')
 
-dim(testData_csv)
-testData_csv = testData_csv[,2:86]
-dim(testData)
-
-testData_scale = scale(testData[,1:59], center=T, scale=T) #change for mean and sd of df_SVM_train
+testData_scale = scale(testData[,1:59], center=mean_trainscale, scale=sd_trainscale) 
 testData_scale2 = cbind(testData_scale, testData[,60:85])
 
-unique(testData$cat2) # Checked all unique values of all categorical variables and there are none in testdata that aren't in validation
-unique(df_ML_train$cat2)
+# unique(testData$cat2) # Checked all unique values of all categorical variables and there are none in testdata that aren't in validation
+# unique(df_ML_train$cat2)
 
 dim(SVM_validscale2)
 dim(testData_scale2)
@@ -475,20 +474,22 @@ svm1=svm(target~., data=SVM_trainscale2, kernel='radial', gamma=bestgamma, cost=
 test_svm=predict(svm1,testData_scale2) 
 
 # XGB
-testData[cat.col] = lapply(testData[cat.col], factor)
-
 testData_sparse = sparse.model.matrix( ~ ., data=testData)
 
-test_xgb = predict(xgb, testData) # only line not working
+test_xgb = predict(xgb, testData_sparse) # 
 
 # RF
 test_rf = predict(rf_ML, testData)
 
 # Combine and ensemeble
+final_test = cbind(test_svm, test_xgb, test_rf)
+final_test = as.data.frame(final_test)
+final_test$mean = rowMeans(final_test)
+View(final_test)
 
 # Make final submission predictions
 Row = seq(1,77,by=1)
-Prediction = test_pred
+Prediction = final_test$mean
 Orange11 = cbind(Row, Prediction)
 View(Orange11)
 write.csv(Orange11, file = "Orange11.csv")

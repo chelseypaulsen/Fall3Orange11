@@ -8,7 +8,8 @@ rm(list=ls())
 options(digits=3)
 options(scipen=999)
 
-load("C:\\Users\\jlmic\\Documents\\Clustering\\Data\\final_data.Rdata")
+#load("C:\\Users\\jlmic\\Documents\\Clustering\\Data\\final_data.Rdata")
+load("C:\\Users\\Steven\\Documents\\MSA\\Analytics Foundations\\Clustering\\data\\final_data.Rdata")
 
 times <- seq(1,295)/100 # Observations in 1/100th of a second
 X <- bs(times,intercept=TRUE,df=60) #create a spline to 

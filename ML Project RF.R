@@ -7,10 +7,11 @@ rm(list=ls())
 library(tidyverse)
 library(caret)
 options(digits=2)
-
+load("C:/Users/jlmic/Documents/Machine Learning/Data/MLProjectData.RData")
 df_ML = read.csv('C:\\Users\\jlmic\\Documents\\Machine Learning\\Data\\MLProjectData.csv')
 #df_ML = read.csv('C:\\Users\\Steven\\Documents\\MSA\\Analytics Foundations\\Machine Learning\\data\\MLProjectData.csv')
 #df_ML= read.csv('C:\\Users\\chels\\Desktop\\MSA\\Fall 3\\Machine Learning\\Project\\MLProjectData.csv')
+dim(df_ML)
 
 # column groups
 cat.col = c('cat1','cat2','cat3','cat4','cat5','cat6','cat7','cat8','cat9','cat10','cat11','cat12','cat13','cat14','cat15',
@@ -89,25 +90,38 @@ summary(df_ML) # no missing values to worry about
 library(randomForest)
 library(ModelMetrics)
 
-#### find best mtry/ntree#### WARNING: THIS WILL TAKE HOURS TO RUN
+# Tune for best mtry
 # accuracy=vector()
 # mtry=seq(2,86,by=2)
+# i=1
+# for(m in mtry){
+#   print(i)
+#   rf = randomForest(target ~ ., data=df_ML_train,mtry=m, ntree=50)
+#   test_pred =  predict(rf,df_ML_validate)
+#   #accuracy[i] =  sum(test_pred!=df_ML_train$target)/nrow(df_ML_train)
+#   abserror = abs(df_ML_validate$target - test_pred)
+#   accuracy[i] = mean(abserror)
+#   i=i+1
+# }
+# plot(mtry, accuracy)
+# 
+# # Tune for ntree
+# accuracy=vector()
 # ntree=seq(25,200,by=25)
 # i=1
-# for (n in ntree) {
-#   for(m in mtry){
-#     print(paste(n,m))
-#     rf = randomForest(target ~ ., data=df_ML_train,mtry=m, ntree=n)
-#     test_pred =  predict(rf,df_ML_validate)
-#     #accuracy[i] =  sum(test_pred!=df_ML_train$target)/nrow(df_ML_train)
-#     abserror = abs(df_ML_validate$target - test_pred)
-#     accuracy[i] = mean(abserror)
-#     i=i+1
-#   }
+# for(n in ntree){
+#   print(i)
+#   rf = randomForest(target ~ ., data=df_ML_train,mtry=22, ntree=n)
+#   test_pred =  predict(rf,df_ML_validate)
+#   #accuracy[i] =  sum(test_pred!=df_ML_train$target)/nrow(df_ML_train)
+#   abserror = abs(df_ML_validate$target - test_pred)
+#   accuracy[i] = mean(abserror)
+#   i=i+1
 # }
+# plot(ntree, accuracy)
 
 # CHOSEN MODEL mtry=24, ntree=175 - MAE = 0.39/0.95
-rf_ML = randomForest(target ~ ., data=df_ML_train, importance=TRUE, mtry=24, ntree=175)
+rf_ML = randomForest(target ~ ., data=df_ML_train, importance=TRUE, mtry=22, ntree=175)
 
 # RF on Training Data #
 rf_train_pred = predict(rf_ML, df_ML_train)
@@ -163,7 +177,7 @@ train_label = as.numeric(df_XG_train$target)[df_XG_train$target]
 #   print(i)
 #   xgb <- xgboost(data = sparse_train,
 #                      label = train_label,
-#                      eta = 0,
+#                      eta = e,
 #                      max_depth = 20,
 #                      gamma = 0,
 #                      nround=100,
@@ -180,8 +194,62 @@ train_label = as.numeric(df_XG_train$target)[df_XG_train$target]
 #   i=i+1
 # }
 # plot(eta, accuracy_xgb)
+# 
+# # Tune for max_depth
+# accuracy_xgb=vector()
+# depth = seq(1,15, by=1)
+# i=1
+# for (d in depth) {
+#   print(i)
+#   xgb <- xgboost(data = sparse_train,
+#                  label = train_label,
+#                  eta = 0.5,
+#                  max_depth = d,
+#                  gamma = 0,
+#                  nround=100,
+#                  subsample = 0.75,
+#                  colsample_bytree = 0.75,
+#                  objective = "reg:linear",
+#                  nthread = 3,
+#                  eval_metric = 'rmse',
+#                  verbose =0)
+#   ptrain = predict(xgb, sparse_train)
+#   pvalid = predict(xgb, sparse_valid)
+#   abserror = abs(df_XG_validate$target - pvalid)
+#   accuracy_xgb[i] = mean(abserror)
+#   i=i+1
+# }
+# plot(depth, accuracy_xgb)
+# 
+# # Tune Gamma
+# accuracy_xgb=vector()
+# gam = seq(0,1, by=.1)
+# i=1
+# for (g in gam) {
+#   print(i)
+#   xgb <- xgboost(data = sparse_train,
+#                  label = train_label,
+#                  eta = 0.5,
+#                  max_depth = 5,
+#                  gamma = g,
+#                  nround=100,
+#                  subsample = 0.75,
+#                  colsample_bytree = 0.75,
+#                  objective = "reg:linear",
+#                  nthread = 3,
+#                  eval_metric = 'rmse',
+#                  verbose =0)
+#   ptrain = predict(xgb, sparse_train)
+#   pvalid = predict(xgb, sparse_valid)
+#   abserror = abs(df_XG_validate$target - pvalid)
+#   accuracy_xgb[i] = mean(abserror)
+#   i=i+1
+# }
+# plot(gam, accuracy_xgb)
 
+##############################################
 # Final XGB Model - MAE = 1.01, 0.94
+##############################################
 xgb <- xgboost(data = sparse_train,
                label = train_label,
                eta = 0.05,
@@ -195,7 +263,7 @@ xgb <- xgboost(data = sparse_train,
                eval_metric = 'rmse',
                verbose =0)
 
-# PRedict
+# Predict
 ptrain = predict(xgb, sparse_train)
 pvalid = predict(xgb, sparse_valid)
 
@@ -361,9 +429,8 @@ print(MAE)
 ############################################################################
 
 # Predict on test
-testData = read.csv('C:\\Users\\jlmic\\Documents\\Machine Learning\\Data\\testData.csv')
-
-testData = testData[,2:86]
+testData = test.data
+dim(testData)
 testData_scale = scale(testData[,1:59], center=T, scale=T)
 testData_scale2 = cbind(testData_scale, testData[,60:85])
 
@@ -383,8 +450,6 @@ svm1=svm(target~., data=SVM_trainscale2, kernel='radial', gamma=bestgamma, cost=
 test_pred=predict(svm1,testData_scale2) # NO clue why this is breaking. 
 
 
-# MAE
-df_SVM_train$Prediction = pred
 
 
 

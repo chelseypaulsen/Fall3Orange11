@@ -14,6 +14,8 @@ library(ks)
 library("readxl")
 library(triangle)
 library(beepr) # for the beep sound
+library(dollar)
+library(scales)
 
 
 #reading the data frame. Notice that that the rows are now 1-48 instead of 3-51 in the xlsx file. 
@@ -430,14 +432,17 @@ beep()
 
 #dist of the proportion of wet wells
 NPV_total = rep(0,sim.size2)
+prob_of_sucess = c()
+k =1 
 for(j in 1:sim.size2){
   #calculates the number of wells that are planned to be drilled
-  planned_wells = runif(1, 10,30)
+  planned_wells = sample(10:30,1)
   
   #calculate cost of each wet/dry well in planned wells
   NPV_well=rep(0,planned_wells)
   for(i in 1:planned_wells){
-    sucess = rbern(1, prob_of_sucess[i])#bernouli dist- 1 means the well was wet, 0 means dry
+    prob_of_sucess[k] = hydrocarbons[j]*reservoir[j]
+    sucess = rbern(1, prob_of_sucess[k])#bernouli dist- 1 means the well was wet, 0 means dry
     if (sucess ==1){
       NPV_well[i]= sample(NPV,1) # taking a random number from NPV
     } 
@@ -445,6 +450,7 @@ for(j in 1:sim.size2){
       NPV_well[i]= -1*sample(dry_well,1) #taking a random number from dry_well and making it negative
     }
     NPV_total[j]=sum(NPV_well)#adding all the costs/profits of wet wells and dry wells together
+    k=k+1
   }
 }
 
@@ -457,7 +463,7 @@ abline(v =  76869576 , col="darkorange3", lwd=2)
 mtext("ES", at=76869576-8000000, col="darkorange3")
 # 
 
-median(NPV_total)
+med_NPV= median(NPV_total)
 min(NPV_total)
 max(NPV_total)
 mean(NPV_total)
@@ -489,7 +495,7 @@ print(paste('VaR:',VaR,'ES:',ES))
 hist(NPV_total, col = 'cornflowerblue',
      main='Histogram of the Total NPV for the Project', xlab='NPV (Dollars)')
 abline(v =  med_NPV , col="darkorange3", lwd=2)
-mtext("Median = 222M", at=mean(NPV_total) , col="darkorange3")
+mtext("Median = 214M", at=mean(NPV_total) , col="darkorange3")
 abline(v =  VaR , col="darkorange3", lwd=2)
 mtext("VaR", at=VaR+8000000 , col="darkorange3")
 abline(v =  ES , col="darkorange3", lwd=2)
@@ -510,7 +516,7 @@ abline(v =  ES/1000000 , col=linecol, lwd=2)
 mtext("ES", at=ES/1000000-8, col=linecol, cex=0.8)
 legend("topright", c("NPV < VaR (5%, 15-year)", "NPV > VaR (5%, 15-year)"), 
        col=c("lightsalmon", "cornflowerblue"), lwd=8, 
-       y.intersp=.6, cex = 0.6, bty = "n", xjust=1) 
+       y.intersp=1, cex = 1, bty = "n", xjust=1) 
 # exported at 750 x 525 pixels 
 
 
@@ -566,7 +572,7 @@ abline(v = ES.boot.L/1000000, col=col2, lwd=2, lty="dashed")
 abline(v = ES.boot.U/1000000, col=col2, lwd=2, lty="dashed")
 legend("topleft", c("Mean Value", "95% Confidence Interval"), 
        col=c(col1, col2), lty=c("solid", "dashed"), 
-       y.intersp=.6, cex = 0.8, bty = "n") #y.intersp tightens legend vertically, cex shrinks font and bty turns off box outline
+       y.intersp=1, cex = 1, bty = "n") #y.intersp tightens legend vertically, cex shrinks font and bty turns off box outline
 
 
 

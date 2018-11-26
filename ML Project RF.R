@@ -6,7 +6,7 @@ rm(list=ls())
 
 library(tidyverse)
 library(caret)
-options(digits=2)
+options(digits=4)
 load("C:/Users/jlmic/Documents/Machine Learning/Data/MLProjectData.RData")
 df_ML = read.csv('C:\\Users\\jlmic\\Documents\\Machine Learning\\Data\\MLProjectData.csv')
 #df_ML = read.csv('C:\\Users\\Steven\\Documents\\MSA\\Analytics Foundations\\Machine Learning\\data\\MLProjectData.csv')
@@ -19,9 +19,10 @@ cat.col = c('cat1','cat2','cat3','cat4','cat5','cat6','cat7','cat8','cat9','cat1
 num.col <- paste('num',seq(1:59), sep='')
 log.col <- paste('cat',seq(3:26), sep='')
 
-# Split 'Training' dataset
+# Split 'dataset
 set.seed(8) # The greatest number there ever was
 intrain<-createDataPartition(y=df_ML$target,p=0.7,list=FALSE)
+
 df_ML_train<-df_ML[intrain,]
 df_ML_validate<-df_ML[-intrain,]
 
@@ -121,24 +122,23 @@ library(ModelMetrics)
 # plot(ntree, accuracy)
 
 # CHOSEN MODEL mtry=24, ntree=175 - MAE = 0.39/0.95
+
 rf_ML = randomForest(target ~ ., data=df_ML_train, importance=TRUE, mtry=22, ntree=175)
 
 # RF on Training Data #
 rf_train_pred = predict(rf_ML, df_ML_train)
 
-df_ML_train$Prediction = rf_train_pred
-df_ML_train$abserror = abs(df_ML_train$target - df_ML_train$Prediction)
+rf_train_abserror = abs(df_ML_train$target - rf_train_pred)
 
-MAE = mean(df_ML_train$abserror)
+MAE = mean(rf_train_abserror)
 print(MAE)
 
 # RF on Validate Data #
 rf_valid_pred = predict(rf_ML, df_ML_validate)
 
-df_ML_validate$Prediction = rf_valid_pred
-df_ML_validate$abserror = abs(df_ML_validate$target - df_ML_validate$Prediction)
+rf_valid_abserror = abs(df_ML_validate$target - rf_valid_pred)
 
-MAE = mean(df_ML_validate$abserror)
+MAE = mean(rf_valid_abserror)
 print(MAE)
 
 ############################################################################
@@ -268,16 +268,15 @@ ptrain = predict(xgb, sparse_train)
 pvalid = predict(xgb, sparse_valid)
 
 # MAE
-df_XG_train$Prediction = ptrain
-df_XG_train$abserror = abs(df_XG_train$target - df_XG_train$Prediction)
 
-MAE = mean(df_XG_train$abserror)
+XG_train_abserror = abs(df_XG_train$target - ptrain)
+
+MAE = mean(XG_train_abserror)
 print(MAE)
 
-df_XG_validate$Prediction = pvalid
-df_XG_validate$abserror = abs(df_XG_validate$target - df_XG_validate$Prediction)
+XG_valid_abserror = abs(df_XG_validate$target - pvalid)
 
-MAE = mean(df_XG_validate$abserror)
+MAE = mean(XG_valid_abserror)
 print(MAE)
 
 
@@ -357,16 +356,15 @@ pred=predict(svm1,SVM_trainscale2)
 pred2=predict(svm1,SVM_validscale2)
 
 # MAE
-df_SVM_train$Prediction = pred
-df_SVM_train$abserror = abs(df_SVM_train$target - df_SVM_train$Prediction)
 
-MAE = mean(df_SVM_train$abserror)
+SVM_train_abserror = abs(df_SVM_train$target - pred)
+
+MAE = mean(SVM_train_abserror)
 print(MAE)
 
-df_SVM_validate$Prediction = pred2
-df_SVM_validate$abserror = abs(df_SVM_validate$target - df_SVM_validate$Prediction)
+SVM_valid_abserror = abs(df_SVM_validate$target - pred2)
 
-MAE = mean(df_SVM_validate$abserror)
+MAE = mean(SVM_valid_abserror)
 print(MAE)
 
 
@@ -374,31 +372,31 @@ print(MAE)
 ## Neural Network ## - This is not working
 ############################################################################
 #install.packages('neuralnet')
-library(neuralnet)
-
-#install.packages('fastDummies')
-library(fastDummies)
-
-# Make normalized neural network dataset
-df_NN = as.data.frame(scale(df_ML[,c(1:59,86)], center=T, scale=T)) # mean and sd scaling
-df_NN = cbind(df_NN, df_ML[,60:85])
-df_NN = dummy_cols(df_NN)
-df_NN = df_NN[,c(1:60,87:103)]
-
-set.seed(8) # The greatest number there ever was
-intrain<-createDataPartition(y=df_ML$target,p=0.7,list=FALSE)
-df_NN_train<-df_NN[intrain,]
-df_NN_validate<-df_NN[-intrain,]
-dim(df_NN_train)
-f = as.formula(target~num1+num2+num3+num4+num5+num6+num7+num8+num9+num10+num11+num12+num13+num14+num15+num16+num17+num18+num19+num20+
-                 num21+num22+num23+num24+num25+num26+num27+num28+num29+num30+num31+num32+num33+num34+num35+num36+num37+num38+num39+num40+
-                 num41+num42+num43+num44+num45+num46+num47+num48+num49+num50+num51+num52+num53+num54+num55+num56+num57+num58+num59+
-                 cat1_E+cat1_A+cat1_C+cat1_D+cat1_B+cat2_D+cat2_G+cat2_L+cat2_B+cat2_F+cat2_H+cat2_C+cat2_K+cat2_E+cat2_I+cat2_A+cat2_J)
-
-nnet1 = neuralnet(f, data=df_NN_train, hidden=1)
-nnet1
-results1 = compute(nnet1, df_NN_valid) # This line is breaking
-nnet1Pred=results1$net.result
+# library(neuralnet)
+# 
+# #install.packages('fastDummies')
+# library(fastDummies)
+# 
+# # Make normalized neural network dataset
+# df_NN = as.data.frame(scale(df_ML[,c(1:59,86)], center=T, scale=T)) # mean and sd scaling
+# df_NN = cbind(df_NN, df_ML[,60:85])
+# df_NN = dummy_cols(df_NN)
+# df_NN = df_NN[,c(1:60,87:103)]
+# 
+# set.seed(8) # The greatest number there ever was
+# intrain<-createDataPartition(y=df_ML$target,p=0.7,list=FALSE)
+# df_NN_train<-df_NN[intrain,]
+# df_NN_validate<-df_NN[-intrain,]
+# dim(df_NN_train)
+# f = as.formula(target~num1+num2+num3+num4+num5+num6+num7+num8+num9+num10+num11+num12+num13+num14+num15+num16+num17+num18+num19+num20+
+#                  num21+num22+num23+num24+num25+num26+num27+num28+num29+num30+num31+num32+num33+num34+num35+num36+num37+num38+num39+num40+
+#                  num41+num42+num43+num44+num45+num46+num47+num48+num49+num50+num51+num52+num53+num54+num55+num56+num57+num58+num59+
+#                  cat1_E+cat1_A+cat1_C+cat1_D+cat1_B+cat2_D+cat2_G+cat2_L+cat2_B+cat2_F+cat2_H+cat2_C+cat2_K+cat2_E+cat2_I+cat2_A+cat2_J)
+# 
+# nnet1 = neuralnet(f, data=df_NN_train, hidden=1)
+# nnet1
+# results1 = compute(nnet1, df_NN_validate) # This line is breaking
+# nnet1Pred=results1$net.result
 
 ############################################################################
 ############################################################################
@@ -424,33 +422,73 @@ print(MAE)
 
 ############################################################################
 ############################################################################
-# SVM Chosen Test Data
+# Ensemble #
 ############################################################################
 ############################################################################
+# Training
+ensemble_train = cbind(rf_train_pred, ptrain, pred)
+ensemble_train = as.data.frame(ensemble_train)
+names(ensemble_train) = c("RF", "XG", "SVM")
+ensemble_train$mean = rowMeans(ensemble_train)
 
-# Predict on test
+ensemble_train$abserror = abs(df_ML_train$target - ensemble_train$mean)
+
+MAE = mean(ensemble_train$abserror)
+print(MAE)
+
+# Validation
+ensemble_valid = cbind(rf_valid_pred, pvalid, pred2)
+ensemble_valid = as.data.frame(ensemble_valid)
+names(ensemble_valid) = c("RF", "XG", "SVM")
+ensemble_valid$mean = rowMeans(ensemble_valid)
+
+ensemble_valid$abserror = abs(df_ML_validate$target - ensemble_valid$mean)
+
+MAE = mean(ensemble_valid$abserror)
+print(MAE)
+
+############################################################################
+############################################################################
+# Predict on test #
+############################################################################
+############################################################################
 testData = test.data
+# testData_csv = read.csv(file = 'C:\\Users\\jlmic\\Documents\\Machine Learning\\Data\\testData.csv')
+
+dim(testData_csv)
+testData_csv = testData_csv[,2:86]
 dim(testData)
-testData_scale = scale(testData[,1:59], center=T, scale=T)
+
+testData_scale = scale(testData[,1:59], center=T, scale=T) #change for mean and sd of df_SVM_train
 testData_scale2 = cbind(testData_scale, testData[,60:85])
 
-unique(testData_scale2$cat26) # Checked all unique values of all categorical variables and there are none in testdata that aren't in validation
-unique(SVM_validscale2$cat26)
+unique(testData$cat2) # Checked all unique values of all categorical variables and there are none in testdata that aren't in validation
+unique(df_ML_train$cat2)
 
-View(testData_scale2)
-View(SVM_validscale2)
 dim(SVM_validscale2)
 dim(testData_scale2)
 
+# SVM
 bestgamma=0.5
 bestc=1
 svm1=svm(target~., data=SVM_trainscale2, kernel='radial', gamma=bestgamma, cost=bestc)
+test_svm=predict(svm1,testData_scale2) 
 
-# Predict
-test_pred=predict(svm1,testData_scale2) # NO clue why this is breaking. 
+# XGB
+testData[cat.col] = lapply(testData[cat.col], factor)
+
+testData_sparse = sparse.model.matrix( ~ ., data=testData)
+
+test_xgb = predict(xgb, testData) # only line not working
+
+# RF
+test_rf = predict(rf_ML, testData)
+
+# Combine and ensemeble
 
 # Make final submission predictions
 Row = seq(1,77,by=1)
 Prediction = test_pred
 Orange11 = cbind(Row, Prediction)
+View(Orange11)
 write.csv(Orange11, file = "Orange11.csv")

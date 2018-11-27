@@ -9,8 +9,8 @@ library(caret)
 
 options(digits=4)
 load("C:/Users/jlmic/Documents/Machine Learning/Data/MLProjectData.RData")
-#df_ML = read.csv('C:\\Users\\jlmic\\Documents\\Machine Learning\\Data\\MLProjectData.csv')
-df_ML = read.csv('C:\\Users\\Steven\\Documents\\MSA\\Analytics Foundations\\Machine Learning\\data\\MLProjectData.csv')
+df_ML = read.csv('C:\\Users\\jlmic\\Documents\\Machine Learning\\Data\\MLProjectData.csv')
+#df_ML = read.csv('C:\\Users\\Steven\\Documents\\MSA\\Analytics Foundations\\Machine Learning\\data\\MLProjectData.csv')
 #df_ML= read.csv('C:\\Users\\chels\\Desktop\\MSA\\Fall 3\\Machine Learning\\Project\\MLProjectData.csv')
 dim(df_ML)
 
@@ -378,52 +378,52 @@ print(MAE)
 #install.packages('neuralnet')
 #install.packages('fastDummies')
 
-library(neuralnet)
-library(fastDummies)
-library(Hmisc)
-library(beepr)
-# Make normalized neural network dataset
-df_NN = as.data.frame(scale(df_ML[,c(1:59,86)], center=T, scale=T)) # mean and sd scaling
-df_NN = cbind(df_NN, df_ML[,60:85])
-df_NN = dummy_cols(df_NN)
-df_NN = df_NN[,c(1:60,87:103)]
-
-# clustering variables for easier NN computation with more hidden layers (not yet implemented)
-NN_vc <- varclus(as.matrix(df_NN[,c(1:59)]))
-is.numeric(as.matrix(df_NN[,c(1:59)]))
-plot(NN_vc)
-groups <- cutree(NN_vc$hclust, 16)
-
-#showing clustered variables
-plot(NN_vc, cex = 0.6)
-rect.hclust(NN_vc$hclust, k = 16, border=2:4)
-groups$clusters
-
-set.seed(8) # The greatest number there ever was
-intrain <- createDataPartition(y=df_ML$target,p=0.7,list=FALSE)
-df_NN_train<-df_NN[intrain,]
-df_NN_validate<-df_NN[-intrain,]
-dim(df_NN_train)
-f = as.formula(target~num1+num2+num3+num4+num5+num6+num7+num8+num9+num10+num11+num12+num13+num14+num15+num16+num17+num18+num19+num20+
-                 num21+num22+num23+num24+num25+num26+num27+num28+num29+num30+num31+num32+num33+num34+num35+num36+num37+num38+num39+num40+
-                 num41+num42+num43+num44+num45+num46+num47+num48+num49+num50+num51+num52+num53+num54+num55+num56+num57+num58+num59+
-                 cat1_E+cat1_A+cat1_C+cat1_D+cat1_B+cat2_D+cat2_G+cat2_L+cat2_B+cat2_F+cat2_H+cat2_C+cat2_K+cat2_E+cat2_I+cat2_A+cat2_J)
-
-nnet1 = neuralnet(f, data=df_NN_train, hidden=1, threshold = 0.01, stepmax = 3e+05) #run time will vary based on hidden layers 
-beep(sound = 3)
-nnet1$weights
-results1 = compute(nnet1, df_NN_validate[,!(names(df_NN_validate)=="target")]) # This line is breaking
-nnet1Pred=results1$net.result
-
-
-# mean absolute error
-mean(abs(df_NN_validate$target - nnet1Pred)) 
-# 0.681 w/ 1 hidden and threshold at 0.01
-# 0.713 w/ 3 hidden and threshold at 0.05 (ran 12 min)
-# No convergences w/ 2 or 3 hidden, threshold=0.01, and stepmax= 3e+05 (ran 20 min for each)
-
-save(nnet1, df_NN_train, df_NN_validate, df_NN, nnet1Pred, file="nnet.Rdata")
-load("nnet.Rdata") #load those puppies back into the env!
+# library(neuralnet)
+# library(fastDummies)
+# library(Hmisc)
+# library(beepr)
+# # Make normalized neural network dataset
+# df_NN = as.data.frame(scale(df_ML[,c(1:59,86)], center=T, scale=T)) # mean and sd scaling
+# df_NN = cbind(df_NN, df_ML[,60:85])
+# df_NN = dummy_cols(df_NN)
+# df_NN = df_NN[,c(1:60,87:103)]
+# 
+# # clustering variables for easier NN computation with more hidden layers (not yet implemented)
+# NN_vc <- varclus(as.matrix(df_NN[,c(1:59)]))
+# is.numeric(as.matrix(df_NN[,c(1:59)]))
+# plot(NN_vc)
+# groups <- cutree(NN_vc$hclust, 16)
+# 
+# #showing clustered variables
+# plot(NN_vc, cex = 0.6)
+# rect.hclust(NN_vc$hclust, k = 16, border=2:4)
+# groups$clusters
+# 
+# set.seed(8) # The greatest number there ever was
+# intrain <- createDataPartition(y=df_ML$target,p=0.7,list=FALSE)
+# df_NN_train<-df_NN[intrain,]
+# df_NN_validate<-df_NN[-intrain,]
+# dim(df_NN_train)
+# f = as.formula(target~num1+num2+num3+num4+num5+num6+num7+num8+num9+num10+num11+num12+num13+num14+num15+num16+num17+num18+num19+num20+
+#                  num21+num22+num23+num24+num25+num26+num27+num28+num29+num30+num31+num32+num33+num34+num35+num36+num37+num38+num39+num40+
+#                  num41+num42+num43+num44+num45+num46+num47+num48+num49+num50+num51+num52+num53+num54+num55+num56+num57+num58+num59+
+#                  cat1_E+cat1_A+cat1_C+cat1_D+cat1_B+cat2_D+cat2_G+cat2_L+cat2_B+cat2_F+cat2_H+cat2_C+cat2_K+cat2_E+cat2_I+cat2_A+cat2_J)
+# 
+# nnet1 = neuralnet(f, data=df_NN_train, hidden=1, threshold = 0.01, stepmax = 3e+05) #run time will vary based on hidden layers 
+# beep(sound = 3)
+# nnet1$weights
+# results1 = compute(nnet1, df_NN_validate[,!(names(df_NN_validate)=="target")]) # This line is breaking
+# nnet1Pred=results1$net.result
+# 
+# 
+# # mean absolute error
+# mean(abs(df_NN_validate$target - nnet1Pred)) 
+# # 0.681 w/ 1 hidden and threshold at 0.01
+# # 0.713 w/ 3 hidden and threshold at 0.05 (ran 12 min)
+# # No convergences w/ 2 or 3 hidden, threshold=0.01, and stepmax= 3e+05 (ran 20 min for each)
+# 
+# save(nnet1, df_NN_train, df_NN_validate, df_NN, nnet1Pred, file="nnet.Rdata")
+# load("nnet.Rdata") #load those puppies back into the env!
 
 ############################################################################
 ############################################################################

@@ -423,6 +423,7 @@ mean(abs(df_NN_validate$target - nnet1Pred))
 # No convergences w/ 2 or 3 hidden, threshold=0.01, and stepmax= 3e+05 (ran 20 min for each)
 
 save(nnet1, df_NN_train, df_NN_validate, df_NN, nnet1Pred, file="nnet.Rdata")
+load("nnet.Rdata") #load those puppies back into the env!
 
 ############################################################################
 ############################################################################

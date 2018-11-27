@@ -375,10 +375,10 @@ print(MAE)
 ############################################################################
 ## Neural Network ## - This is not working
 ############################################################################
-install.packages('neuralnet')
-library(neuralnet)
+#install.packages('neuralnet')
+#install.packages('fastDummies')
 
-install.packages('fastDummies')
+library(neuralnet)
 library(fastDummies)
 library(Hmisc)
 library(beepr)
@@ -415,12 +415,14 @@ nnet1$weights
 results1 = compute(nnet1, df_NN_validate[,!(names(df_NN_validate)=="target")]) # This line is breaking
 nnet1Pred=results1$net.result
 
+
 # mean absolute error
 mean(abs(df_NN_validate$target - nnet1Pred)) 
-#0.677 w/ 1 hidden and threshold at 0.01
-#0.713 w/ 3 hidden and threshold at 0.05 (ran 12 min)
-#No convergences w/ 2 or 3 hidden, threshold=0.01, and stepmax= 3e+05 (ran 20 min for each)
+# 0.681 w/ 1 hidden and threshold at 0.01
+# 0.713 w/ 3 hidden and threshold at 0.05 (ran 12 min)
+# No convergences w/ 2 or 3 hidden, threshold=0.01, and stepmax= 3e+05 (ran 20 min for each)
 
+save(nnet1, df_NN_train, df_NN_validate, df_NN, nnet1Pred, file="nnet.Rdata")
 
 ############################################################################
 ############################################################################

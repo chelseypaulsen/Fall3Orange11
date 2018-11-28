@@ -63,6 +63,9 @@ ggplot(clust3) +
 
 View(cluster.means.df)
 
+
+
+###### Comparing Clusters #######
 #looking at counts/proportions
 table(cdata$cluster)
 prop.table(table(cdata$cluster))
@@ -86,10 +89,99 @@ long = gather(cdata, id.vars= colnames(cdata[1:16]))
 ggplot(long) +
   geom_density(aes(x=value, color=as.factor(cluster))) +
   facet_wrap(~key, scales='free')
-
 summary(group_by(cdata, cluster))
 
-pca$loadings[,1:2]
+# a) Compute the graph of mean spirometry for the 4 clusters (all 4 on one graph). 
+spiro1 <- as.numeric(means[1,7:66]) #-1 removes the natural intercept
+spiro2 <- as.numeric(means[2,7:66])
+spiro3 <- as.numeric(means[3,7:66])
+spiro4 <- as.numeric(means[4,7:66])
+
+plot(times,X%*%spiro1,ylim=c(0,100),
+     type='l',lwd=2,col=1,
+     xlab="Time", ylab="Spirometry ML")
+lines(times,X%*%spiro2,lwd=2,col=2)
+lines(times,X%*%spiro3,lwd=2,col=3)
+lines(times,X%*%spiro4,lwd=2,col=4)
+legend("topright", c("1", "2", "3", "4"), col=c(1,2,3,4), lwd=2)
+
+sfun1 <- splinefun(times,X%*%spiro1)
+sfun2 <- splinefun(times,X%*%spiro2)
+sfun3 <- splinefun(times,X%*%spiro3)
+sfun4 <- splinefun(times,X%*%spiro4)
+integrate(sfun1,min(times),max(times))
+integrate(sfun2,min(times),max(times))
+integrate(sfun3,min(times),max(times))
+integrate(sfun4,min(times),max(times))
+# group 3 has the greatest lung capacity, closely followed by group 4 
 
 trial <- pca$x %*% t(pca$rotations) # not working
 
+plot(times,X%*%beta1,ylim=c(0,100),type='l')
+
+# b) Look at cluster 3. Plot the graph of this cluster and give the mean values (on the original scale) for columns 2-65. 
+# What makes this cluster different from # the other clusters?  
+# Describe this cluster so a physician can better understand important characteristics of these clusters. 
+# A: Cluster 3 has higher poverty ratio than other clusters. 
+
+# c) Looking at clusters 1,2, and 4 which clusters has the largest lung capacity?
+#   which one has the least lung capacity? Describe these three groups in terms of 
+# the curves as well as the additional variables that are available in the data 
+# frame cdata. Provide figures with your descriptions. 
+
+# NOW look at the data using MCLUST type 'set.seed(12345)': 
+#   
+#   a) Using mclustbic() and columns 10-20 of cdata (NOT the principal component values).
+# estimate the optimal number of  cluster components using the BIC and only with 
+# modelNames='VVV' and G = 1:20. Show a graph of the estimate. Is this number different than 
+# the ones given above, why? (This will take a while). 
+# b) Now using G = 6 and modelNames='VVV' and the same columns, provide a graph of each cluster's mean curve (USING ALL OF THE DATA COLUMNS). 
+# Put all plots on one graph. 
+# 
+# c) Using all of the data compare cluster 4 with cluster 3 from the kmeans() cluster what can you 	
+# 
+# say about the similarities between these two clusters, what are the differences? Which estimate 
+# 
+# makes more sense? What do you trust more? What are the benefits of using mixture modeling over
+# 
+# kmeans, what are the issues?
+# 
+# d) Are there any clusters similar to the k-means clusters? Describe each cluster.  
+library(mclust)
+set.seed(12345)
+mc_clust = Mclust(cdata[,10:20], modelNames='VVV', G=6)
+mc_class = mc_clust$classification
+cdata$MC_clust = mc_class
+
+means_mcclust <- cdata %>%
+  group_by(MC_clust) %>%
+  summarise_all("mean")
+View(means_mcclust)
+
+spiro1 <- as.numeric(means_mcclust[1,7:66]) #-1 removes the natural intercept
+spiro2 <- as.numeric(means_mcclust[2,7:66])
+spiro3 <- as.numeric(means_mcclust[3,7:66])
+spiro4 <- as.numeric(means_mcclust[4,7:66])
+spiro5 <- as.numeric(means_mcclust[5,7:66])
+spiro6 <- as.numeric(means_mcclust[6,7:66])
+
+plot(times,X%*%spiro1,ylim=c(0,100),
+     type='l',lwd=2,col=1,
+     xlab="Time", ylab="Spirometry ML")
+lines(times,X%*%spiro2,lwd=2,col=2)
+lines(times,X%*%spiro3,lwd=2,col=3)
+lines(times,X%*%spiro4,lwd=2,col=4)
+lines(times,X%*%spiro5,lwd=2,col=5)
+lines(times,X%*%spiro6,lwd=2,col=6)
+legend("topright", c("1", "2", "3", "4", "5", "6"), col=c(1,2,3,4,5,6), lwd=2)
+
+sfun1 <- splinefun(times,X%*%spiro1)
+sfun2 <- splinefun(times,X%*%spiro2)
+sfun3 <- splinefun(times,X%*%spiro3)
+sfun4 <- splinefun(times,X%*%spiro4)
+integrate(sfun1,min(times),max(times))
+integrate(sfun2,min(times),max(times))
+integrate(sfun3,min(times),max(times))
+integrate(sfun4,min(times),max(times))
+
+View(cdata)

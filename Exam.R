@@ -8,8 +8,8 @@ rm(list=ls())
 options(digits=3)
 options(scipen=999)
 
-#load("C:\\Users\\jlmic\\Documents\\Clustering\\Data\\final_data.Rdata")
-load("C:\\Users\\Steven\\Documents\\MSA\\Analytics Foundations\\Clustering\\data\\final_data.Rdata")
+load("C:\\Users\\jlmic\\Documents\\Clustering\\Data\\final_data.Rdata")
+#load("C:\\Users\\Steven\\Documents\\MSA\\Analytics Foundations\\Clustering\\data\\final_data.Rdata")
 
 times <- seq(1,295)/100 # Observations in 1/100th of a second
 X <- bs(times,intercept=TRUE,df=60) #create a spline to 
@@ -54,6 +54,9 @@ set.seed(12345)
 kmeans <- kmeans(pca$scores, 4)
 cdata$cluster <- kmeans$cluster
 
+# Graph the mean spirometry
+
+# Plot the clusters (Look at cluster 3)
 ggplot(data.frame(pca$scores)) +
   geom_point(aes(x=pca$scores[,1], y=pca$scores[,2], color=as.factor(kmeans$cluster)), alpha=0.2)
 
@@ -61,7 +64,46 @@ clust3 <- data.frame(pca$scores[which(kmeans$cluster==3),1:64])
 ggplot(clust3) +
   geom_point(aes(x=Comp.1, y=Comp.2), alpha=0.2)
 
-View(cluster.means.df)
+# find the mean values of col 2:65
+cdata_clust1 = subset(cdata, cluster==1)
+cdata_clust1 = cdata_clust1[,2:65]
+clust1_mean = colMeans(cdata_clust1)
+
+cdata_clust2 = subset(cdata, cluster==2)
+cdata_clust2 = cdata_clust2[,2:65]
+clust2_mean = colMeans(cdata_clust2)
+
+cdata_clust3 = subset(cdata, cluster==3)
+cdata_clust3 = cdata_clust3[,2:65]
+clust3_mean = colMeans(cdata_clust3)
+View(clust3_mean)
+
+cdata_clust4 = subset(cdata, cluster==4)
+cdata_clust4 = cdata_clust4[,2:65]
+clust4_mean = colMeans(cdata_clust4)
+
+cdata_mean = cbind(clust1_mean, clust2_mean, clust3_mean, clust4_mean)
+View(cdata_mean)
+# C.b) clust3 has Poverty_ratio:higher, 1:higher, 2:lower, 3:higher
+# C.b) 4:lower, 5:higher, 6:WAYlower, 7:higher, 8:higher, 10:higher
+# C.b) To Physician: clust3 has higher poverty than the other groups
+
+# D.a)
+install.packages('mclust')
+library(mclust)
+set.seed(12345)
+m_bic = mclustBIC(cdata[,10:20], modelNames='VVV', G=1:20)
+plot(m_bic)
+summary(m_bic)
+
+# Yes, this number(15) is WAY different than the above clusters of 4.
+# This is different, because it uses a different selection criterion (BIC)
+# D.b)
+set.seed(12345)
+mc_clust = Mclust(cdata[,10:20], modelNames='VVV', G=6)
+mc_class = mc_clust$classification
+cdata$MC_clust = mc_class
+View(cdata)
 
 #looking at counts/proportions
 table(cdata$cluster)
